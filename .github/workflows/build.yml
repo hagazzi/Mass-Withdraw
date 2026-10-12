@@ -28,6 +28,9 @@ jobs:
         Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
         Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
 
+    - name: Restore NuGet Packages
+      run: dotnet restore MassWithdraw/MassWithdraw.csproj        
+
     - name: Build with dotnet
       run: dotnet build --no-restore -c Release MassWithdraw/MassWithdraw.csproj
 
