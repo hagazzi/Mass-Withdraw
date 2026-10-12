@@ -3,6 +3,10 @@ name: PR Build
 on:
   push:
   workflow_dispatch: 
+    inputs:
+      tag:
+        description: "MR v1.0.2.0"
+        required: true
 
 jobs:
 
@@ -33,5 +37,12 @@ jobs:
 
     - name: Build with dotnet
       run: dotnet build --no-restore -c Release MassWithdraw/MassWithdraw.csproj
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+        files: bin/x64/Release/*.dll
+        draft: true      
 
 
