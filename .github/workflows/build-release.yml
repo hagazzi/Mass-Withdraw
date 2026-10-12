@@ -37,9 +37,23 @@ jobs:
     - name: Build with dotnet
       run: dotnet build --no-restore -c Release MassWithdraw/MassWithdraw.csproj
 
+    - name: Set Release Tag
+      id: vars
+      shell: bash
+      run: |
+        echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT      
+
     - name: Create release
       uses: softprops/action-gh-release@v2
       with:
+        tag_name: run-${{ steps.vars.outputs.sha_short }}
+        name: Release ${{ steps.vars.outputs.sha_short }}
+        body: |
+          Automated release generated from commit ${{ github.sha }}.
+          Review changes in the repository history.
+          I have no idea what i'm doing!
+        draft: false
+        prerelease: false          
         files: |
           MassWithdraw/bin/Release/MassWithdraw/latest.zip
       env:
