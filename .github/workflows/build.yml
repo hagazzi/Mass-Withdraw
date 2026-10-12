@@ -38,7 +38,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: MassWithdraw
-        path: .\MassWithdraw\bin\x64\Release\MassWithdraw\*
+        path: MassWithdraw/bin/Release/*
         if-no-files-found: error
         retention-days: 1    
 
