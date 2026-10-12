@@ -2,7 +2,9 @@ name: PR Build
 
 on:
   push:
+    branches: [ notabranch ]
   workflow_dispatch: 
+    branches: [ notabranch ]
 
 jobs:
 
