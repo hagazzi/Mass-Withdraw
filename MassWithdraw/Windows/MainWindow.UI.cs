@@ -199,6 +199,14 @@ public partial class MainWindow : Window, IDisposable
 
             if (IconButton("##ConfigButton", FontAwesomeIcon.Cog, "Config", new Vector2(ButtonWidth, 0)))
                 this.toggleConfigUi?.Invoke();
+
+            if (ImGui.RadioButton("Retainer → Inventory", noInverse)) {
+                noInverse = true;
+            }
+            ImGui.SameLine();
+            if (ImGui.RadioButton("Inventory → Retainer", !noInverse)) {
+                noInverse = false;
+            }
         }
         ImGui.EndGroup();
 
