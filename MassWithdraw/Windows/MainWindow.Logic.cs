@@ -469,9 +469,13 @@ public partial class MainWindow
      * <param name="targetSlot">Outputs the slot index of the stackable item</param>
      * <return type="bool">True if a valid stackable slot is found; otherwise, false</return>
      */
-    private unsafe bool FindStackableSlot(uint itemId, out GameStructs.InventoryType targetContainer, out int targetSlot)
+    private unsafe bool FindStackableSlot(uint itemId, out GameStructs.InventoryType targetContainer, out int targetSlot, bool retainerToInv)
     {
-        targetContainer = default;
+        if (retainerToInv) {
+            targetContainer = default;
+        } else {
+            targetContainer = GameStructs.InventoryType.RetainerPage1;
+        }
         targetSlot = -1;
 
         if (itemId == 0)
@@ -488,28 +492,50 @@ public partial class MainWindow
         int maxStack = (int)row.Value.StackSize;
         if (maxStack <= 1)
             return false;
-
-        foreach (var page in PlayerInventoryPages)
-        {
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-                continue;
-
-            for (int slot = 0; slot < container->Size; slot++)
+        if (retainerToInv) {
+            foreach (var page in PlayerInventoryPages)
             {
-                var s = container->GetInventorySlot(slot);
-                if (s == null)
+                var container = inv->GetInventoryContainer(page);
+                if (container == null)
                     continue;
-                
-                if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack)
+
+                for (int slot = 0; slot < container->Size; slot++)
                 {
-                    targetContainer = page;
-                    targetSlot = slot;
-                    return true;
+                    var s = container->GetInventorySlot(slot);
+                    if (s == null)
+                        continue;
+                    
+                    if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack)
+                    {
+                        targetContainer = page;
+                        targetSlot = slot;
+                        return true;
+                    }
                 }
             }
-        }
+        } else {
+            foreach (var page in RetainerPages)
+            {
+                var container = inv->GetInventoryContainer(page);
+                if (container == null)
+                    continue;
 
+                for (int slot = 0; slot < container->Size; slot++)
+                {
+                    var s = container->GetInventorySlot(slot);
+                    if (s == null)
+                        continue;
+                    
+                    if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack)
+                    {
+                        targetContainer = page;
+                        targetSlot = slot;
+                        return true;
+                    }
+                }
+            }            
+        }
+        
         return false;
     }
 
@@ -519,20 +545,33 @@ public partial class MainWindow
      * <param name="targetSlot">Outputs the index of the available inventory slot</param>
      * <return type="bool">True if a free slot is found; otherwise, false</return>
      */
-    private unsafe bool FindFreeBagSlot(out GameStructs.InventoryType targetContainer, out int targetSlot)
+    private unsafe bool FindFreeBagSlot(out GameStructs.InventoryType targetContainer, out int targetSlot, bool retainerToInv)
     {
-        targetContainer = default;
+        int bagCount;
+        if (retainerToInv) {
+            targetContainer = default;
+            bagCount = 4;
+        } else {
+            targetContainer = GameStructs.InventoryType.RetainerPage1;
+            bagCount = 7;
+        }
         targetSlot = -1;
 
         var inv = GameStructs.InventoryManager.Instance();
         if (inv == null)
             return false;
 
-        const int bagCount = 4;
+        //const int bagCount = 4;
+        
 
         for (int checkedContainers = 0; checkedContainers < bagCount; checkedContainers++)
         {
-            var containerType = PlayerInventoryPages[inventoryContainerOffset];
+            var containerType;
+            if (retainerToInv) {
+                containerType = PlayerInventoryPages[inventoryContainerOffset];
+            } else {
+                containerType = RetainerPages[inventoryContainerOffset];
+            }
             var container     = inv->GetInventoryContainer(containerType);
             int size          = container != null ? container->Size : 0;
 
@@ -650,7 +689,8 @@ public partial class MainWindow
         if (now < nextMoveAtUtc)
             return;
 
-        bool didMove = TryMoveOneItem();
+        //bool didMove = TryMoveOneItem();
+        bool didMove = TryMoveOneItemReverse();
 
         if (!transferSession.Running)
             return;
@@ -749,8 +789,8 @@ public partial class MainWindow
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
 
-                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot) &&
-                    !FindFreeBagSlot(out targetContainer, out targetSlot))
+                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, true) &&
+                    !FindFreeBagSlot(out targetContainer, out targetSlot, true))
                 {
                     StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
                     return false;
@@ -771,6 +811,78 @@ public partial class MainWindow
         StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
         return false;
     }
+
+    private unsafe bool TryMoveOneItemReverse()
+    {
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+        {
+            StopTransfer("[MassWithdraw] InventoryManager not available.");
+            return false;
+        }
+
+        seenUniqueDuringRun ??= new HashSet<uint>();
+
+        while (currentInventoryPageIndex < PlayerInventoryPages.Length)
+        {
+            var page = PlayerInventoryPages[currentInventoryPageIndex];
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+            {
+                currentInventoryPageIndex++;
+                currentInventorySlotIndex = 0;
+                continue;
+            }
+
+            int pageSize = container->Size;
+
+            while (currentInventorySlotIndex < pageSize)
+            {
+                int slot = currentInventorySlotIndex++;
+                var it = container->GetInventorySlot(slot);
+                if (it == null || it->ItemId == 0 || it->Quantity == 0)
+                    continue;
+
+                uint itemId = it->ItemId;
+                int quantity = it->Quantity;
+
+                var row = GetItemRowById(itemId);
+                if (row == null || !MatchesTransferFilters(row.Value))
+                    continue;
+
+                if (row.Value.IsUnique)
+                {
+                    if (!seenUniqueDuringRun.Add(itemId))
+                        continue;
+                    if (HasItemInInventory(itemId))
+                        continue;
+                }
+
+                GameStructs.InventoryType targetContainer;
+                int targetSlot;
+
+                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, false) &&
+                    !FindFreeBagSlot(out targetContainer, out targetSlot, false))
+                {
+                    StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
+                    return false;
+                }
+
+                var currentSlot = container->GetInventorySlot(slot);
+                if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
+                    return false;
+
+                _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
+                return true;
+            }
+
+            currentInventoryPageIndex++;
+            currentInventorySlotIndex = 0;
+        }
+
+        StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
+        return false;
+    }       
 
 #endregion
 
