@@ -568,7 +568,7 @@ public partial class MainWindow
 
         for (int checkedContainers = 0; checkedContainers < bagCount; checkedContainers++)
         {
-            var containerType;
+            GameStructs.InventoryType containerType;
             if (retainerToInv) {
                 containerType = PlayerInventoryPages[inventoryContainerOffset];
             } else {
