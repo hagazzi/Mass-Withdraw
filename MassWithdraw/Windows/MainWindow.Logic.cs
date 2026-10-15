@@ -81,7 +81,8 @@ public partial class MainWindow
     private int currentRetainerPageIndex = 0;
     private int currentRetainerSlotIndex = 0;
     private int currentInventoryPageIndex = 0;
-    private int currentInventorySlotIndex = 0;    
+    private int currentInventorySlotIndex = 0;
+    private bool noInverse = true;
     private HashSet<uint>? seenUniqueDuringRun;
     private DateTime nextMoveAtUtc = DateTime.MinValue;
 
@@ -691,8 +692,14 @@ public partial class MainWindow
         if (now < nextMoveAtUtc)
             return;
 
+        bool didMove;
+        if (noInverse) {
+            didMove = TryMoveOneItem();
+        } else {
+            didMove = TryMoveOneItemReverse();
+        }
         //bool didMove = TryMoveOneItem();
-        bool didMove = TryMoveOneItemReverse();
+        //bool didMove = TryMoveOneItemReverse();
 
         if (!transferSession.Running)
             return;
