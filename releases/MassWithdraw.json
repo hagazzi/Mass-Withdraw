@@ -2,7 +2,7 @@
   "Author": "Kanwa",
   "Name": "Mass Withdraw",
   "InternalName": "MassWithdraw",
-  "AssemblyVersion": "1.0.1.9",
+  "AssemblyVersion": "1.0.2.0",
   "Description": "Withdraw all items from your retainer.",
   "ApplicableVersion": "any",
   "Tags": [
@@ -10,13 +10,13 @@
     "inventory",
     "withdraw"
   ],
-  "DalamudApiLevel": 14,
+  "DalamudApiLevel": 15,
   "LoadRequiredState": 0,
   "LoadSync": false,
   "CanUnloadAsync": false,
   "LoadPriority": 0,
   "IconUrl": "https://kanww.github.io/Mass-Withdraw/releases/icon128.png",
   "Punchline": "Withdraw all items from your retainer into your inventory.",
-  "Changelog": "- 1.0.1.9 — Fixed performance issues and low FPS during mass withdraw operations.",
+  "Changelog": "- 1.0.2.0 — Updated for Dalamud API 15 / .NET 10.",
   "AcceptsFeedback": true
 }
