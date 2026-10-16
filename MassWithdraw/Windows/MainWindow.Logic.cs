@@ -686,6 +686,8 @@ public partial class MainWindow
         transferDelayMsActive = transferDelayMs;
         currentRetainerPageIndex = 0;
         currentRetainerSlotIndex = 0;
+        currentInventoryPageIndex = 0;
+        currentInventorySlotIndex = 0;
         seenUniqueDuringRun = new HashSet<uint>();
         nextMoveAtUtc = DateTime.UtcNow;
     }
