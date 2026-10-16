@@ -407,8 +407,8 @@ public partial class MainWindow
             }
         }
         //Plugin.ChatGui.Print("[MassWithdraw] Transfer stacks: …");
-        Plugin.Log.Debug($"[MassWithdraw] Total stacks: {totalStacks}");
-        Plugin.Log.Debug($"[MassWithdraw] Transfer stacks before mergeable stack: {transferStacks}");
+        //Plugin.Log.Debug($"[MassWithdraw] Total stacks: {totalStacks}");
+        //Plugin.Log.Debug($"[MassWithdraw] Transfer stacks before mergeable stack: {transferStacks}");
     }
 
     /**
