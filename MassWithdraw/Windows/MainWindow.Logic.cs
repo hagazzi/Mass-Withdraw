@@ -298,8 +298,17 @@ public partial class MainWindow
         HashSet<uint> inventoryItems)
     {
         int freeSlots = 0;
+        GameStructs.InventoryType[] containerList;
+        if (noInverse)
+        {
+            containerList = PlayerInventoryPages;
+        } 
+        else
+        {
+            containerList = RetainerPages;
+        }
 
-        foreach (var page in PlayerInventoryPages)
+        foreach (var page in containerList)
         {
             var container = inv->GetInventoryContainer(page);
             if (container == null)
@@ -350,8 +359,18 @@ public partial class MainWindow
         ref int transferStacks)
     {
         var seenUniqueFromRetainer = new HashSet<uint>();
+        GameStructs.InventoryType[] containerList;
+        
+        if (noInverse)
+        {
+            containerList = RetainerPages;
+        } 
+        else
+        {
+            containerList = PlayerInventoryPages;
+        }
 
-        foreach (var page in RetainerPages)
+        foreach (var page in containerList)
         {
             var container = inv->GetInventoryContainer(page);
             if (container == null)

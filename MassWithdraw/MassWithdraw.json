@@ -10,5 +10,5 @@
     "withdraw"
   ],
   "IconUrl": "https://kanww.github.io/Mass-Withdraw/releases/icon128.png",
-  "Changelog": "- 1.0.2.0 — Updated for Dalamud API 15 / .NET 10."
+  "Changelog": "- 1.0.2.1 — From Inventory to Retainer also."
 }
