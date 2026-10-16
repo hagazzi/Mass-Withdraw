@@ -406,6 +406,9 @@ public partial class MainWindow
                 list.Add(slot->Quantity);
             }
         }
+        //Plugin.ChatGui.Print("[MassWithdraw] Transfer stacks: …");
+        Plugin.Log.Debug($"[MassWithdraw] Total stacks: {totalStacks}");
+        Plugin.Log.Debug($"[MassWithdraw] Transfer stacks before mergeable stack: {transferStacks}");
     }
 
     /**
