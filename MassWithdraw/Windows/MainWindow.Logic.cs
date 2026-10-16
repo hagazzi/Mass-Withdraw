@@ -299,14 +299,14 @@ public partial class MainWindow
     {
         int freeSlots = 0;
         GameStructs.InventoryType[] containerList;
-/*         if (noInverse)
-        { */
+        if (noInverse)
+        {
             containerList = PlayerInventoryPages;
-/*         } 
+        } 
         else
         {
             containerList = RetainerPages;
-        } */
+        }
 
         foreach (var page in containerList)
         {
@@ -361,14 +361,14 @@ public partial class MainWindow
         var seenUniqueFromRetainer = new HashSet<uint>();
         GameStructs.InventoryType[] containerList;
         
-/*         if (noInverse)
-        { */
+        if (noInverse)
+        {
             containerList = RetainerPages;
-/*         } 
+        } 
         else
         {
             containerList = PlayerInventoryPages;
-        } */
+        }
 
         foreach (var page in containerList)
         {
