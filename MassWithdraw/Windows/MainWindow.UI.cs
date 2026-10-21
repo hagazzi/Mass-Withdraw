@@ -290,6 +290,7 @@ public partial class MainWindow : Window, IDisposable
             (ConsumablesId,       "Consumables"),
             (CraftingMaterialsId, "Crafting mats"),
             (SubmersiblePartsId,  "Submersible parts"),
+            (HousingItemsId,      "Housing"),
         };
 
         foreach (var (id, label) in categories)

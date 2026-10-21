@@ -21,7 +21,9 @@ public partial class MainWindow
         MateriaId            = 999003,
         ConsumablesId        = 999004,
         CraftingMaterialsId  = 999005,
-        SubmersiblePartsId   = 999006;
+        SubmersiblePartsId   = 999006,
+        HousingItemsId = 999007;
+
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
         [RareGearId]          = IsRareGear,
@@ -30,6 +32,7 @@ public partial class MainWindow
         [ConsumablesId]       = IsConsumable,
         [CraftingMaterialsId] = IsCraftingMaterial,
         [SubmersiblePartsId]  = IsSubmersiblePart,
+        [HousingItemsId]      = IsHousingItem,
     };
     private static readonly HashSet<uint> materiaCategoryIds   = [57];
     private static readonly HashSet<uint> materialsCategoryIds = [44, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59];
@@ -144,6 +147,30 @@ public partial class MainWindow
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is equippable gear; otherwise, false</return>
      */
+    private static bool IsHousingItem(ItemRow item)
+    {
+        bool housingNotFurnishing = (item.RowId>=65) && (item.RowId<=80);
+        bool housingFurnishing = item.RowId == 57;
+        //exterior fixture roof 65
+        //house 66
+        //window 67
+        //door 68
+        //69
+        //70
+        //71
+        //fence 72
+        //interior fixture interior wall 73
+        //interior flooring 74
+        //interior light 75
+        //outdoor 76
+        //furnishing 57
+        //chair 57
+        //table 77
+        //tabletop rowid 78
+        //wallmounted 79
+        //80
+        return (housingNotFurnishing || housingFurnishing);
+    }     
     private static bool IsWhiteGear(ItemRow item)
     {
         bool isGear = item.EquipSlotCategory.RowId > 0;
