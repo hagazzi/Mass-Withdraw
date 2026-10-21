@@ -649,16 +649,20 @@ public partial class MainWindow
         var stackSpace = new Dictionary<uint, int>();
         var inventoryItems = new HashSet<uint>();
         int inventoryFreeSlots = CountInventory(inv, stackSpace, inventoryItems);
-
+        Plugin.ChatGui.Print($"CountInventory = {inventoryFreeSlots}");
         var moveStacks = new Dictionary<uint, List<int>>();
         int totalStacks = 0;
         int transferStacks = 0;
         CountRetainerStacks(inv, inventoryItems, moveStacks, ref totalStacks, ref transferStacks);
+        Plugin.ChatGui.Print($"transferStacks = {transferStacks}");
 
         int mergeable = CountMergeableStacks(moveStacks, stackSpace);
+        Plugin.ChatGui.Print($"mergeable = {mergeable}");
 
         int unmergedStacks = Math.Max(0, transferStacks - mergeable);
+        Plugin.ChatGui.Print($"unmergedStacks = {unmergedStacks}");
         int itemsToMove = mergeable + Math.Min(unmergedStacks, inventoryFreeSlots);
+        Plugin.ChatGui.Print($"itemsToMove = {itemsToMove}");
 
         return new TransferPreview(totalStacks, transferStacks, inventoryFreeSlots, itemsToMove);
     }
