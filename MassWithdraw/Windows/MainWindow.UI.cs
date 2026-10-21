@@ -202,10 +202,12 @@ public partial class MainWindow : Window, IDisposable
 
             if (ImGui.RadioButton("Retainer → Inventory", noInverse)) {
                 noInverse = true;
+                RecountRetainerCategoryCounts();
             }
             ImGui.SameLine();
             if (ImGui.RadioButton("Inventory → Retainer", !noInverse)) {
                 noInverse = false;
+                RecountRetainerCategoryCounts();
             }
         }
         ImGui.EndGroup();

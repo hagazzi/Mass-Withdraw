@@ -246,31 +246,63 @@ public partial class MainWindow
         if (inv == null)
             return;
 
-        foreach (var page in RetainerPages)
+        if (noInverse)
         {
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-                continue;
-
-            for (int slotIndex = 0; slotIndex < container->Size; slotIndex++)
+            foreach (var page in RetainerPages)
             {
-                var slot = container->GetInventorySlot(slotIndex);
-                if (slot == null || slot->ItemId == 0 || slot->Quantity == 0)
+                var container = inv->GetInventoryContainer(page);
+                if (container == null)
                     continue;
 
-                var itemRow = GetItemRowById(slot->ItemId);
-                if (itemRow == null)
-                    continue;
-
-                var row = itemRow.Value;
-
-                foreach (var (categoryId, filter) in categoryFilters)
+                for (int slotIndex = 0; slotIndex < container->Size; slotIndex++)
                 {
-                    if (filter(row))
-                        IncrementCategory(categoryId);
+                    var slot = container->GetInventorySlot(slotIndex);
+                    if (slot == null || slot->ItemId == 0 || slot->Quantity == 0)
+                        continue;
+
+                    var itemRow = GetItemRowById(slot->ItemId);
+                    if (itemRow == null)
+                        continue;
+
+                    var row = itemRow.Value;
+
+                    foreach (var (categoryId, filter) in categoryFilters)
+                    {
+                        if (filter(row))
+                            IncrementCategory(categoryId);
+                    }
                 }
-            }
+            }            
+        } 
+        else
+        {
+            foreach (var page in PlayerInventoryPages)
+            {
+                var container = inv->GetInventoryContainer(page);
+                if (container == null)
+                    continue;
+
+                for (int slotIndex = 0; slotIndex < container->Size; slotIndex++)
+                {
+                    var slot = container->GetInventorySlot(slotIndex);
+                    if (slot == null || slot->ItemId == 0 || slot->Quantity == 0)
+                        continue;
+
+                    var itemRow = GetItemRowById(slot->ItemId);
+                    if (itemRow == null)
+                        continue;
+
+                    var row = itemRow.Value;
+
+                    foreach (var (categoryId, filter) in categoryFilters)
+                    {
+                        if (filter(row))
+                            IncrementCategory(categoryId);
+                    }
+                }
+            }              
         }
+
     }
 
     /**
