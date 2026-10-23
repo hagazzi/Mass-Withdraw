@@ -204,8 +204,10 @@ public partial class MainWindow
     {
         bool isNotGear = item.EquipSlotCategory.RowId == 0;
         bool hasAction = item.ItemAction.RowId > 0;
-
-        return isNotGear && hasAction;
+        bool isGysahl = item.RowId == 4868;
+        bool isAetheryteTicket = item.RowId >= 21069 && item.RowId <= 21071;
+        //might want to add a checkbox somewhere
+        return isNotGear && hasAction && !isGysahl && !isAetheryteTicket;
     }
 
     /**
@@ -217,8 +219,9 @@ public partial class MainWindow
     {
         bool isMaterial = materialsCategoryIds.Contains(item.ItemSearchCategory.RowId);
         bool hasNoAction = item.ItemAction.RowId == 0;
+        bool isGlamourPrism = item.RowId == 21800;
 
-        return isMaterial && hasNoAction;
+        return isMaterial && hasNoAction && !isGlamourPrism;
     }
 
     /**
