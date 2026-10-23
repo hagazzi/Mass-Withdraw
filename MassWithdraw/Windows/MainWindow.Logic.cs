@@ -37,7 +37,7 @@ public partial class MainWindow
     private static readonly HashSet<uint> materiaCategoryIds   = [57];
     private static readonly HashSet<uint> materialsCategoryIds = [44, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59];
     private static readonly HashSet<uint> submersiblePartsCategoryIds = [79];
-    private static readonly HashSet<uint> housingItemsCategoryIds = [57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
+    private static readonly HashSet<uint> housingItemsCategoryIds = [56, 65, 66, 67, 68, 69, 70, 71, 72];
     private static readonly GameStructs.InventoryType[] RetainerPages =
     {
         GameStructs.InventoryType.RetainerPage1,
@@ -150,10 +150,18 @@ public partial class MainWindow
      */
     private static bool IsHousingItem(ItemRow item)
     {
-        //bool housingNotFurnishing = (item.RowId>=65) && (item.RowId<=80);
-        //bool housingFurnishing = item.RowId == 57;
+        //just noticed i was using ItemUICategory rather than ItemSearchCategory
+        //Combed Wool Rug https://www.garlandtools.org/db/#item/15976
+        //https://v2.xivapi.com/api/sheet/Item/15976?fields=Name,ItemUICategory.Name,ItemUICategory.RowId
         //roof 65 house 66 window 67 door 68 69 70 71 fence 72 wall 73 flooring 74 light 75 outdoor 76 furnishing 57 tabletop 78 wallmounted 79 rug 80
-        bool isHousing = housingItemsCategoryIds.Contains(item.ItemSearchCategory.RowId);
+        //with ItemUICategory private static readonly HashSet<uint> housingItemsCategoryIds = [57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
+        //bool isHousing = housingItemsCategoryIds.Contains(item.ItemUICategory.RowId);
+
+
+        //https://v2.xivapi.com/api/sheet/Item/15976?fields=Name,RowId,ItemSearchCategory.RowId 
+        //itemsearchcategory exteriorfixture 65 interiorfixt 66 outdoor 67 furnishing 56 chair 68 table 69 tabletop 70 wallmounted 71 rug 72 
+        //with ItemSearchCategory private static readonly HashSet<uint> housingItemsCategoryIds = [56, 65, 66, 67, 68, 69, 70, 71, 72];
+        bool isHousing = housingItemsCategoryIds.Contains(item.ItemSearchCategory.RowId);                        
         return isHousing;
     }     
     private static bool IsWhiteGear(ItemRow item)
@@ -220,6 +228,8 @@ public partial class MainWindow
      */
     private static bool IsSubmersiblePart(ItemRow item)
     {
+        //airship part UICategory hull 90 sail 91 forecastle 93 aftcastle 92 
+        //submarine part UICategory hull 101 bow 103 bridge 104 stern 102
         bool isSubmersiblePart = submersiblePartsCategoryIds.Contains(item.ItemSearchCategory.RowId);
         return isSubmersiblePart;
     }
