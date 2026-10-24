@@ -259,6 +259,32 @@ public partial class MainWindow
     {
         bool craftMaterialsFromTreasureHunt = (
             //(item.RowId == ) || //
+            //HW treasure dungeon
+            (item.RowId == 16907) || //new world macrame
+            (item.RowId == 16906) || //wool top
+            //STB treasure dungeon
+            (item.RowId == 20271) || //rathanhia leaves
+            (item.RowId == 21205) || //hannish wool
+            (item.RowId == 21206) || //thavnairian wool
+            (item.RowId == 24336) || //whisperfine fleece
+            (item.RowId == 20270) || //nagxian silk
+            (item.RowId == 22464) || //ala mhigan weave
+            (item.RowId == 23375) || //cloth cointe quaint
+            //SHB treasure dungeon
+            (item.RowId == 33869) || //frontier cloth
+            (item.RowId == 27977) || //enchanted elm lumber
+            //EW treasure dungeon
+            (item.RowId == 39589) || //hagnos cloth
+            (item.RowId == 41653) || //athletikos cloth
+            (item.RowId == 36628) || //cloth of happiness
+            //DT treasure dungeon
+            (item.RowId == 48229) || //flexible leather band
+            (item.RowId == 45072) || //corduroy felt
+            (item.RowId == 46261) || //summerlight linen
+            (item.RowId == 50830) || //cloth of legend
+            (item.RowId == 52631) || //indigo twill cloth
+            (item.RowId == 52630) || //sweatcloth
+            //from treasure map
             (item.RowId == 7772) || //mariner cotton cloth
             (item.RowId == 12646) || //thavnairian silk
             (item.RowId == 12645) || //thavnairian leather
