@@ -20,13 +20,14 @@ public partial class MainWindow
         WhiteGearId          = 999002,
         MateriaId            = 999003,
         ConsumablesId        = 999004,
-        GearBoxId           = 999005,
-        CraftingMaterialsId  = 999006,
-        TreasureMaterialsId = 999007,
-        SubmersiblePartsId   = 999008,
-        SchematicBoardId   = 999009,
-        DeployableMaterialsId = 999010,
-        HousingItemsId = 999011;
+        RegisterableId      = 999005,
+        GearBoxId           = 999006,
+        CraftingMaterialsId  = 999007,
+        TreasureMaterialsId = 999008,
+        SubmersiblePartsId   = 999009,
+        SchematicBoardId   = 999010,
+        DeployableMaterialsId = 999011,
+        HousingItemsId = 999012;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -34,6 +35,7 @@ public partial class MainWindow
         [WhiteGearId]         = IsWhiteGear,
         [MateriaId]           = IsMateria,
         [ConsumablesId]       = IsConsumable,
+        [RegisterableId]      = IsRegisterableMiscellany,
         [GearBoxId]           = IsGearCoffer,
         [CraftingMaterialsId] = IsCraftingMaterial,
         [TreasureMaterialsId] = IsTreasureMaterial,
@@ -215,8 +217,27 @@ public partial class MainWindow
         bool isGysahl = item.RowId == 4868;
         bool isAetheryteTicket = item.RowId >= 21069 && item.RowId <= 21071;
         //might want to add a checkbox somewhere
-        return isNotGear && hasAction && !isGysahl && !isAetheryteTicket && !IsGearCoffer(item);
+        return isNotGear && hasAction && !isGysahl && !isAetheryteTicket && !IsGearCoffer(item) && !IsRegisterableMiscellany(item);
     }
+
+    /**
+     * * Determines whether the given item is a registerable miscellany
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is non-gear and has an associated action</return>
+     */
+    private static bool IsRegisterableMiscellany(ItemRow item)
+    {
+        //50435 searchcategory 90
+        //43573 searchcategory 75
+        bool isNotGear = item.EquipSlotCategory.RowId == 0;
+        bool hasAction = item.ItemAction.RowId > 0;
+        bool consumable = isNotGear && hasAction;
+
+        bool registerable = item.ItemSearchCategory.RowId == 90;
+        bool minion = item.ItemSearchCategory.RowId == 75;
+
+        return consumable && (registerable || minion);
+    }      
 
     /**
      * * Determines whether the given item is a gear coffer
@@ -246,8 +267,19 @@ public partial class MainWindow
         bool isMaterial = materialsCategoryIds.Contains(item.ItemSearchCategory.RowId);
         bool hasNoAction = item.ItemAction.RowId == 0;
         bool isGlamourPrism = item.RowId == 21800;
+        bool isMarineWax = item.RowId == 23222; //has itemsearch category 60 (miscellany)
 
-        return isMaterial && hasNoAction && !isGlamourPrism && !IsSchematicBoardMaterial(item) && !IsDeployableMaterial(item) && !IsTreasureMaterial(item);
+        bool regularCraftingMat =             
+        (
+            isMaterial && 
+            hasNoAction && 
+            !isGlamourPrism && 
+            !IsSchematicBoardMaterial(item) && 
+            !IsDeployableMaterial(item) && 
+            !IsTreasureMaterial(item)
+        );
+
+        return regularCraftingMat || isMarineWax;
     }
 
     /**
