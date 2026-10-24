@@ -220,11 +220,13 @@ public partial class MainWindow
 
     private static bool IsGearCoffer(ItemRow item)
     {
-        HashSet<uint> gearCofferRowId = [61];
-        bool isgearcoffer = gearCofferRowId.Contains(item.ItemUICategory.RowId);
-        bool hascoffer = item.Name.ToString().Contains("Coffer");
+        bool isgearcoffer = item.ItemUICategory.RowId == 61;
+        //bool hascoffer = item.Name.ToString().Contains("Coffer");
+        //bool isntventurecoffer = !item.Name.ToString().Contains("Venture");
         bool cantbesold = item.ItemSearchCategory.RowId == 0;
-        return isgearcoffer && hascoffer && cantbesold;
+        bool chestactiontype = item.ItemAction.RowId == 388 || item.ItemAction.RowId == 1085;
+        bool cantstack = item.StackSize == 1;
+        return isgearcoffer && cantbesold && chestactiontype && cantstack;
     }
 
     /**
