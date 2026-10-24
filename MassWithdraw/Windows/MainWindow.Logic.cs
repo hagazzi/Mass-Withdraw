@@ -22,10 +22,11 @@ public partial class MainWindow
         ConsumablesId        = 999004,
         GearBoxId           = 999005,
         CraftingMaterialsId  = 999006,
-        SubmersiblePartsId   = 999007,
-        SchematicBoardId   = 999008,
-        DeployableMaterialsId = 999009,
-        HousingItemsId = 999010;
+        TreasureMaterialsId = 999007,
+        SubmersiblePartsId   = 999008,
+        SchematicBoardId   = 999009,
+        DeployableMaterialsId = 999010,
+        HousingItemsId = 999011;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -35,6 +36,7 @@ public partial class MainWindow
         [ConsumablesId]       = IsConsumable,
         [GearBoxId]           = IsGearCoffer,
         [CraftingMaterialsId] = IsCraftingMaterial,
+        [TreasureMaterialsId] = IsTreasureMaterial,
         [SubmersiblePartsId]  = IsSubmersiblePart,
         [SchematicBoardId]    = IsSchematicBoardMaterial,
         [DeployableMaterialsId]= IsDeployableMaterial,
@@ -245,8 +247,57 @@ public partial class MainWindow
         bool hasNoAction = item.ItemAction.RowId == 0;
         bool isGlamourPrism = item.RowId == 21800;
 
-        return isMaterial && hasNoAction && !isGlamourPrism && !IsSchematicBoardMaterial(item) && !IsDeployableMaterial(item);
+        return isMaterial && hasNoAction && !isGlamourPrism && !IsSchematicBoardMaterial(item) && !IsDeployableMaterial(item) && !IsTreasureMaterial(item);
     }
+
+    /**
+     * * Determines whether the given item is a crafting material from treasure hunt (also gotten from quick venture) specifically those for glamour crafts
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is in materials categories and has no action</return>
+     */
+    private static bool IsTreasureMaterial(ItemRow item)
+    {
+        bool craftMaterialsFromTreasureHunt = (
+            //(item.RowId == ) || //
+            (item.RowId == 7772) || //mariner cotton cloth
+            (item.RowId == 12646) || //thavnairian silk
+            (item.RowId == 12645) || //thavnairian leather
+            (item.RowId == 23376) || //leather cointe quaint
+            (item.RowId == 22463) || //holy linen
+            (item.RowId == 20273) || //nagxian leather
+            (item.RowId == 20272) || //taoist wool
+            (item.RowId == 24804) || //waterproof cloth
+            (item.RowId == 28905) || //shell leather
+            (item.RowId == 27975) || //indigo cloth
+            (item.RowId == 27974) || //steer hide
+            (item.RowId == 27953) || //fine glass fiber
+            (item.RowId == 27976) || //fireglass leather
+            (item.RowId == 7044) || //exquisite buttons
+            (item.RowId == 7043) || //ahriman tears
+            (item.RowId == 7032) || //lotus leaf
+            (item.RowId == 44133) || //mamonite
+            (item.RowId == 44132) || //timeless turali cloth
+            (item.RowId == 40700) || //malake karpasos
+            (item.RowId == 38686) || //exciting leather
+            (item.RowId == 7042) || //chinchilla hide
+            (item.RowId == 7771) || //dress material
+            (item.RowId == 7047) || //frosted glass lens
+            (item.RowId == 36629) || //phonograph plate
+            (item.RowId == 7045) || //morbol saliva
+            (item.RowId == 8021) || //rush grass
+            (item.RowId == 7046) || //cutting oil
+            (item.RowId == 14931) || //antique rug
+            (item.RowId == 14932) || //antique leather
+            (item.RowId == 13746) || //falconer hemp
+            (item.RowId == 7041)  || //blue fox hide
+            (item.RowId == 30135) || //cloth softening powder
+            (item.RowId == 31091) || //sea cloth
+            (item.RowId == 33027)    //calf leather
+        );
+
+        return craftMaterialsFromTreasureHunt;
+    }
+
 
     /**
      * * Determines whether the given item is a schematic board material

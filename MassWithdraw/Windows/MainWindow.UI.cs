@@ -292,6 +292,7 @@ public partial class MainWindow : Window, IDisposable
             (ConsumablesId,       "Consumables"),
             (GearBoxId,           "Gearbox"),
             (CraftingMaterialsId, "Crafting mats"),
+            (TreasureMaterialsId, "Treasure mats"),            
             (SubmersiblePartsId,  "Submersible parts"),
             (SchematicBoardId,    "Schematic Materials"),
             (DeployableMaterialsId, "Deployable Materials"),
