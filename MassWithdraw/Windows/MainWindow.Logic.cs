@@ -28,7 +28,8 @@ public partial class MainWindow
         SubmersiblePartsId   = 999010,
         SchematicBoardId   = 999011,
         DeployableMaterialsId = 999012,
-        HousingItemsId = 999013;
+        HousingItemsId = 999013,
+        UhousingItemsId = 999014;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -45,6 +46,7 @@ public partial class MainWindow
         [SchematicBoardId]    = IsSchematicBoardMaterial,
         [DeployableMaterialsId]= IsDeployableMaterial,
         [HousingItemsId]      = IsHousingItem,
+        [UhousingItemsId]      = IsUntradableHousingItem,
     };
     private static readonly HashSet<uint> materiaCategoryIds   = [57];
     private static readonly HashSet<uint> materialsCategoryIds = [44, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59];
@@ -159,23 +161,7 @@ public partial class MainWindow
      * * Determines whether the given item is a white gear
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is equippable gear; otherwise, false</return>
-     */
-    private static bool IsHousingItem(ItemRow item)
-    {
-        //just noticed i was using ItemUICategory rather than ItemSearchCategory
-        //Combed Wool Rug https://www.garlandtools.org/db/#item/15976
-        //https://v2.xivapi.com/api/sheet/Item/15976?fields=Name,ItemUICategory.Name,ItemUICategory.RowId
-        //roof 65 house 66 window 67 door 68 69 70 71 fence 72 wall 73 flooring 74 light 75 outdoor 76 furnishing 57 tabletop 78 wallmounted 79 rug 80
-        //with ItemUICategory private static readonly HashSet<uint> housingItemsCategoryIds = [57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
-        //bool isHousing = housingItemsCategoryIds.Contains(item.ItemUICategory.RowId);
-
-
-        //https://v2.xivapi.com/api/sheet/Item/15976?fields=Name,RowId,ItemSearchCategory.RowId 
-        //itemsearchcategory exteriorfixture 65 interiorfixt 66 outdoor 67 furnishing 56 chair 68 table 69 tabletop 70 wallmounted 71 rug 72 
-        //with ItemSearchCategory private static readonly HashSet<uint> housingItemsCategoryIds = [56, 65, 66, 67, 68, 69, 70, 71, 72];
-        bool isHousing = housingItemsCategoryIds.Contains(item.ItemSearchCategory.RowId);                        
-        return isHousing;
-    }     
+     */ 
     private static bool IsWhiteGear(ItemRow item)
     {
         bool isGear = item.EquipSlotCategory.RowId > 0;
@@ -246,7 +232,6 @@ public partial class MainWindow
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is non-gear and has an associated action</return>
      */    
-
     private static bool IsGearCoffer(ItemRow item)
     {
         bool isgearcoffer = item.ItemUICategory.RowId == 61; //Miscellany
@@ -284,12 +269,12 @@ public partial class MainWindow
 
         return regularCraftingMat || isMarineWax;
     }
+    
     /**
      * * Determines whether the given item is a currency bought crafting material
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is in materials categories and has no action</return>
      */    
-
     private static bool IsCurrencyOtherMaterial(ItemRow item)
     {
         bool craftMaterialsCurrencyOther = (
@@ -387,13 +372,11 @@ public partial class MainWindow
         return craftMaterialsFromTreasureHunt;
     }
 
-
     /**
      * * Determines whether the given item is a schematic board material
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is in materials categories and has no action</return>
      */ 
-
     private static bool IsSchematicBoardMaterial(ItemRow item)
     {
         bool isBoardMaterial = (
@@ -420,7 +403,6 @@ public partial class MainWindow
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is in materials categories and has no action</return>
      */ 
-
     private static bool IsDeployableMaterial(ItemRow item)
     {
         bool DeployableMaterial = (
@@ -463,6 +445,42 @@ public partial class MainWindow
         bool isSubmersiblePart = submersiblePartsCategoryIds.Contains(item.ItemSearchCategory.RowId);
         return isSubmersiblePart;
     }
+
+    /**
+     * * Determines whether the given item is a housing item
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item belongs to a known submersible parts search category</return>
+     */    
+    private static bool IsHousingItem(ItemRow item)
+    {
+        //just noticed i was using ItemUICategory rather than ItemSearchCategory
+        //Combed Wool Rug https://www.garlandtools.org/db/#item/15976
+        //https://v2.xivapi.com/api/sheet/Item/15976?fields=Name,ItemUICategory.Name,ItemUICategory.RowId
+        //roof 65 house 66 window 67 door 68 69 70 71 fence 72 wall 73 flooring 74 light 75 outdoor 76 furnishing 57 tabletop 78 wallmounted 79 rug 80
+        //with ItemUICategory private static readonly HashSet<uint> housingItemsCategoryIds = [57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
+        //bool isHousing = housingItemsCategoryIds.Contains(item.ItemUICategory.RowId);
+
+
+        //https://v2.xivapi.com/api/sheet/Item/15976?fields=Name,RowId,ItemSearchCategory.RowId 
+        //itemsearchcategory exteriorfixture 65 interiorfixt 66 outdoor 67 furnishing 56 chair 68 table 69 tabletop 70 wallmounted 71 rug 72 
+        //with ItemSearchCategory private static readonly HashSet<uint> housingItemsCategoryIds = [56, 65, 66, 67, 68, 69, 70, 71, 72];
+        bool isHousing = housingItemsCategoryIds.Contains(item.ItemSearchCategory.RowId);                        
+        return isHousing && IsUntradableHousingItem(item);
+    } 
+
+    /**
+     * * Determines whether the given item is a untradable housing item
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item belongs to a known submersible parts search category</return>
+     */
+    private static bool IsUntradableHousingItem(ItemRow item)
+    {
+        HashSet<uint> uhousingItemsCategoryIds = [57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80];
+        bool untradable = item.ItemSearchCategory.RowId == 0;
+        bool isHousing = uhousingItemsCategoryIds.Contains(item.ItemUICategory.RowId);                        
+        return isHousing && untradable;
+    }          
+
 #endregion
 
 #region Filters & Counts
