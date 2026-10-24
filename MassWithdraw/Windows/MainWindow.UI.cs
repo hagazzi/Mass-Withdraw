@@ -293,6 +293,8 @@ public partial class MainWindow : Window, IDisposable
             (GearBoxId,           "Gearbox"),
             (CraftingMaterialsId, "Crafting mats"),
             (SubmersiblePartsId,  "Submersible parts"),
+            (SchematicBoardId,    "Schematic Materials"),
+            (DeployableMaterialsId, "Deployable Materials"),
             (HousingItemsId,      "Housing"),
         };
 

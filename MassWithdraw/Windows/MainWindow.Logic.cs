@@ -23,7 +23,9 @@ public partial class MainWindow
         GearBoxId           = 999005,
         CraftingMaterialsId  = 999006,
         SubmersiblePartsId   = 999007,
-        HousingItemsId = 999008;
+        SchematicBoardId   = 999008,
+        DeployableMaterialsId = 999009,
+        HousingItemsId = 999010;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -34,6 +36,8 @@ public partial class MainWindow
         [GearBoxId]           = IsGearCoffer,
         [CraftingMaterialsId] = IsCraftingMaterial,
         [SubmersiblePartsId]  = IsSubmersiblePart,
+        [SchematicBoardId]    = IsSchematicBoardMaterial,
+        [DeployableMaterialsId]= IsDeployableMaterial,
         [HousingItemsId]      = IsHousingItem,
     };
     private static readonly HashSet<uint> materiaCategoryIds   = [57];
@@ -220,9 +224,10 @@ public partial class MainWindow
 
     private static bool IsGearCoffer(ItemRow item)
     {
-        bool isgearcoffer = item.ItemUICategory.RowId == 61;
+        bool isgearcoffer = item.ItemUICategory.RowId == 61; //Miscellany
         //bool hascoffer = item.Name.ToString().Contains("Coffer");
         //bool isntventurecoffer = !item.Name.ToString().Contains("Venture");
+        //item.ItemAction.Value.Action.RowId
         bool cantbesold = item.ItemSearchCategory.RowId == 0;
         bool chestactiontype = item.ItemAction.RowId == 388 || item.ItemAction.RowId == 1085;
         bool cantstack = item.StackSize == 1;
@@ -240,8 +245,58 @@ public partial class MainWindow
         bool hasNoAction = item.ItemAction.RowId == 0;
         bool isGlamourPrism = item.RowId == 21800;
 
-        return isMaterial && hasNoAction && !isGlamourPrism;
+        return isMaterial && hasNoAction && !isGlamourPrism && !IsSchematicBoardMaterial(item) && !IsDeployableMaterial(item);
     }
+
+    /**
+     * * Determines whether the given item is a schematic board material
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is in materials categories and has no action</return>
+     */ 
+
+    private static bool IsSchematicBoardMaterial(ItemRow item)
+    {
+        bool isBoardMaterial = (
+            (item.RowId == 37083) || //basaltic clay
+            (item.RowId == 12920) || //red clay
+            (item.RowId == 12921) || //black clay
+            (item.RowId == 29590) || //pelagic clay
+            (item.RowId == 26528) || //cocobolo lumber
+            (item.RowId == 12929) || //empty cluster
+            (item.RowId == 12928) || //empty crystal
+            (item.RowId == 12927) || //aetherochemical fiber
+            (item.RowId == 12926) || //synthetic fiber
+            (item.RowId == 12925) || //balsa wood lumber
+            (item.RowId == 12924) || //balsa wood scrap
+            (item.RowId == 12923) || //bamboo weave
+            (item.RowId == 12922)    //synthetic resin
+        );
+
+        return isBoardMaterial;
+    }
+
+    /**
+     * * Determines whether the given item is a deployable material
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is in materials categories and has no action</return>
+     */ 
+
+    private static bool IsDeployableMaterial(ItemRow item)
+    {
+        bool DeployableMaterial = (
+            (item.RowId == 26532) || //pure titanium plate
+            (item.RowId == 26531) || //pure titanium ore
+            (item.RowId == 26530) || //cryptomeria lumber
+            (item.RowId == 26529) || //cryptomeria log
+            (item.RowId == 14935) || //galvanized garlond stel
+            (item.RowId == 12913) || //garlond steel
+            (item.RowId == 12223) || //raw celestine
+            (item.RowId == 12912) || //celestine
+            (item.RowId == 12224)    //vivianite
+        );
+
+        return DeployableMaterial;
+    }                 
 
     /**
      * * Determines whether the given item is classified as submersible parts
