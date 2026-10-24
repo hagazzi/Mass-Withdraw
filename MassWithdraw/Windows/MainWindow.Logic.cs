@@ -407,6 +407,7 @@ public partial class MainWindow
     {
         bool DeployableMaterial = (
             //(item.RowId == ) || //
+            (item.RowId == 10099) || //unaspected crystal
             (item.RowId == 12230) || //deep-blue cluster
             (item.RowId == 12229) || //deep-blue crystal
             (item.RowId == 12228) || //deep-green cluster
