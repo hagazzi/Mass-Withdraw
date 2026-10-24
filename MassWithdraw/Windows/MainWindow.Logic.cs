@@ -222,7 +222,9 @@ public partial class MainWindow
     {
         HashSet<uint> gearCofferRowId = [61];
         bool isgearcoffer = gearCofferRowId.Contains(item.ItemUICategory.RowId);
-        return isgearcoffer;
+        bool hascoffer = item.Name.ToString().Contains("Coffer");
+        bool cantbesold = item.ItemSearchCategory.RowId == 0;
+        return isgearcoffer && hascoffer && cantbesold;
     }
 
     /**
