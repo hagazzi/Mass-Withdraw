@@ -370,6 +370,9 @@ public partial class MainWindow
     private static bool IsDeployableMaterial(ItemRow item)
     {
         bool DeployableMaterial = (
+            (item.RowId == 13758) || //cassia block
+            (item.RowId == 12232) || //cassia lumber
+            (item.RowId == 12221) || //cassia log
             (item.RowId == 26532) || //pure titanium plate
             (item.RowId == 26531) || //pure titanium ore
             (item.RowId == 26530) || //cryptomeria lumber
