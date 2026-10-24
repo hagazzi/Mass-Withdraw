@@ -259,6 +259,14 @@ public partial class MainWindow
     {
         bool craftMaterialsFromTreasureHunt = (
             //(item.RowId == ) || //
+            //not really treasure materials but cost scrip or tomestone, and are used for white gear glamour craft
+            (item.RowId == 17574) || //flannel - 200 purple gathering or crafting scrip
+            (item.RowId == 13744) || //wind silk - 75 purple gathering scrip
+            (item.RowId == 19992) || //doman weave - 10 poetics
+            (item.RowId == 13748) || //cloud cloth - 20 purple gathering scrip
+            (item.RowId == 32937) || //saffron cloth - 40 poetics
+            (item.RowId == 45978) || //diatryma felt - 40 tomestone of mathematics
+            (item.RowId == 37832) || //titanoboa leather - 20 poetics
             //HW treasure dungeon
             (item.RowId == 16907) || //new world macrame
             (item.RowId == 16906) || //wool top
@@ -285,6 +293,7 @@ public partial class MainWindow
             (item.RowId == 52631) || //indigo twill cloth
             (item.RowId == 52630) || //sweatcloth
             //from treasure map
+            (item.RowId == 8026) || //mist silk
             (item.RowId == 7772) || //mariner cotton cloth
             (item.RowId == 12646) || //thavnairian silk
             (item.RowId == 12645) || //thavnairian leather
