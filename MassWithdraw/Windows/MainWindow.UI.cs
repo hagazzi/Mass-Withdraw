@@ -290,6 +290,7 @@ public partial class MainWindow : Window, IDisposable
             (RareGearId,          "Rare gear"),
             (MateriaId,           "Materia"),
             (ConsumablesId,       "Consumables"),
+            (GearBoxId,           "Gearbox"),
             (CraftingMaterialsId, "Crafting mats"),
             (SubmersiblePartsId,  "Submersible parts"),
             (HousingItemsId,      "Housing"),

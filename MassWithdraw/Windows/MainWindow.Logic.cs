@@ -20,9 +20,10 @@ public partial class MainWindow
         WhiteGearId          = 999002,
         MateriaId            = 999003,
         ConsumablesId        = 999004,
-        CraftingMaterialsId  = 999005,
-        SubmersiblePartsId   = 999006,
-        HousingItemsId = 999007;
+        GearBoxId           = 999005,
+        CraftingMaterialsId  = 999006,
+        SubmersiblePartsId   = 999007,
+        HousingItemsId = 999008;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -30,6 +31,7 @@ public partial class MainWindow
         [WhiteGearId]         = IsWhiteGear,
         [MateriaId]           = IsMateria,
         [ConsumablesId]       = IsConsumable,
+        [GearBoxId]           = IsGearCoffer,
         [CraftingMaterialsId] = IsCraftingMaterial,
         [SubmersiblePartsId]  = IsSubmersiblePart,
         [HousingItemsId]      = IsHousingItem,
@@ -207,7 +209,20 @@ public partial class MainWindow
         bool isGysahl = item.RowId == 4868;
         bool isAetheryteTicket = item.RowId >= 21069 && item.RowId <= 21071;
         //might want to add a checkbox somewhere
-        return isNotGear && hasAction && !isGysahl && !isAetheryteTicket;
+        return isNotGear && hasAction && !isGysahl && !isAetheryteTicket && !IsGearCoffer(item);
+    }
+
+    /**
+     * * Determines whether the given item is a gear coffer
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is non-gear and has an associated action</return>
+     */    
+
+    private static bool IsGearCoffer(ItemRow item)
+    {
+        HashSet<uint> gearCofferRowId = [61];
+        bool isgearcoffer = gearCofferRowId.Contains(item.ItemUICategory.RowId);
+        return isgearcoffer;
     }
 
     /**
