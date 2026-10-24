@@ -23,11 +23,12 @@ public partial class MainWindow
         RegisterableId      = 999005,
         GearBoxId           = 999006,
         CraftingMaterialsId  = 999007,
-        TreasureMaterialsId = 999008,
-        SubmersiblePartsId   = 999009,
-        SchematicBoardId   = 999010,
-        DeployableMaterialsId = 999011,
-        HousingItemsId = 999012;
+        CurrencyOtherId  = 999008,
+        TreasureMaterialsId = 999009,
+        SubmersiblePartsId   = 999010,
+        SchematicBoardId   = 999011,
+        DeployableMaterialsId = 999012,
+        HousingItemsId = 999013;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -38,6 +39,7 @@ public partial class MainWindow
         [RegisterableId]      = IsRegisterableMiscellany,
         [GearBoxId]           = IsGearCoffer,
         [CraftingMaterialsId] = IsCraftingMaterial,
+        [CurrencyOtherId]     = IsCurrencyOtherMaterial,
         [TreasureMaterialsId] = IsTreasureMaterial,
         [SubmersiblePartsId]  = IsSubmersiblePart,
         [SchematicBoardId]    = IsSchematicBoardMaterial,
@@ -276,10 +278,38 @@ public partial class MainWindow
             !isGlamourPrism && 
             !IsSchematicBoardMaterial(item) && 
             !IsDeployableMaterial(item) && 
-            !IsTreasureMaterial(item)
+            !IsTreasureMaterial(item) &&
+            !IsCurrencyOtherMaterial(item)
         );
 
         return regularCraftingMat || isMarineWax;
+    }
+    /**
+     * * Determines whether the given item is a currency bought crafting material
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is in materials categories and has no action</return>
+     */    
+
+    private static bool IsCurrencyOtherMaterial(ItemRow item)
+    {
+        bool craftMaterialsCurrencyOther = (
+            //(item.RowId == ) || //
+            //not really treasure materials but cost scrip or tomestone, and are used for white gear glamour craft
+            (item.RowId == 39595) || //gripgel - 250 purple crafting scrip
+            (item.RowId == 7775) || //glazenut - gardening
+            (item.RowId == 13754) || //blood pepper - gardening
+            (item.RowId == 20791) || //cloudsbreath - gardening
+            (item.RowId == 17574) || //flannel - 200 purple gathering or crafting scrip
+            (item.RowId == 13744) || //wind silk - 75 purple gathering scrip
+            (item.RowId == 19992) || //doman weave - 10 poetics
+            (item.RowId == 13748) || //cloud cloth - 20 purple gathering scrip
+            (item.RowId == 32937) || //saffron cloth - 40 poetics
+            (item.RowId == 32947) || //gardenia fruit - 20 poetics
+            (item.RowId == 45978) || //diatryma felt - 40 tomestone of mathematics
+            (item.RowId == 37832)  //titanoboa leather - 20 poetics
+        );
+
+        return craftMaterialsCurrencyOther;
     }
 
     /**
@@ -291,14 +321,6 @@ public partial class MainWindow
     {
         bool craftMaterialsFromTreasureHunt = (
             //(item.RowId == ) || //
-            //not really treasure materials but cost scrip or tomestone, and are used for white gear glamour craft
-            (item.RowId == 17574) || //flannel - 200 purple gathering or crafting scrip
-            (item.RowId == 13744) || //wind silk - 75 purple gathering scrip
-            (item.RowId == 19992) || //doman weave - 10 poetics
-            (item.RowId == 13748) || //cloud cloth - 20 purple gathering scrip
-            (item.RowId == 32937) || //saffron cloth - 40 poetics
-            (item.RowId == 45978) || //diatryma felt - 40 tomestone of mathematics
-            (item.RowId == 37832) || //titanoboa leather - 20 poetics
             //HW treasure dungeon
             (item.RowId == 16907) || //new world macrame
             (item.RowId == 16906) || //wool top
@@ -402,6 +424,16 @@ public partial class MainWindow
     private static bool IsDeployableMaterial(ItemRow item)
     {
         bool DeployableMaterial = (
+            //(item.RowId == ) || //
+            (item.RowId == 12230) || //deep-blue cluster
+            (item.RowId == 12229) || //deep-blue crystal
+            (item.RowId == 12228) || //deep-green cluster
+            (item.RowId == 12227) || //deep-green crystal
+            (item.RowId == 12226) || //deep-red cluster
+            (item.RowId == 12225) || //deep-red crystal            
+            (item.RowId == 12231) || //farreach canvas
+            (item.RowId == 12220) || //red moko grass
+            (item.RowId == 13758) || //cassia block
             (item.RowId == 13758) || //cassia block
             (item.RowId == 12232) || //cassia lumber
             (item.RowId == 12221) || //cassia log

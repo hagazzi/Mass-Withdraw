@@ -290,14 +290,15 @@ public partial class MainWindow : Window, IDisposable
             (RareGearId,          "Rare gear"),
             (MateriaId,           "Materia"),
             (ConsumablesId,       "Consumables"),
-            (RegisterableId,      "Registerable Miscellany"),
+            (RegisterableId,      "Registerable miscellany"),
             (GearBoxId,           "Gearbox"),
-            (CraftingMaterialsId, "Crafting mats"),
+            (CraftingMaterialsId, "Crafting mats(regular)"),
+            (CurrencyOtherId,     "Crafting mats(currency & gardening)"),
             (TreasureMaterialsId, "Treasure mats"),            
             (SubmersiblePartsId,  "Submersible parts"),
-            (SchematicBoardId,    "Schematic Materials"),
-            (DeployableMaterialsId, "Deployable Materials"),
-            (HousingItemsId,      "Housing"),
+            (SchematicBoardId,    "Schematic materials"),
+            (DeployableMaterialsId, "Deployable materials"),
+            (HousingItemsId,        "Housing"),
         };
 
         foreach (var (id, label) in categories)
