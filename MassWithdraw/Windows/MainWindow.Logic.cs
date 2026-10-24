@@ -465,7 +465,7 @@ public partial class MainWindow
         //itemsearchcategory exteriorfixture 65 interiorfixt 66 outdoor 67 furnishing 56 chair 68 table 69 tabletop 70 wallmounted 71 rug 72 
         //with ItemSearchCategory private static readonly HashSet<uint> housingItemsCategoryIds = [56, 65, 66, 67, 68, 69, 70, 71, 72];
         bool isHousing = housingItemsCategoryIds.Contains(item.ItemSearchCategory.RowId);                        
-        return isHousing && IsUntradableHousingItem(item);
+        return isHousing && !IsUntradableHousingItem(item);
     } 
 
     /**
