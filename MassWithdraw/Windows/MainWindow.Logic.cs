@@ -8,6 +8,7 @@ using Dalamud.Plugin.Services;
 using GameStructs = FFXIVClientStructs.FFXIV.Client.Game;
 using ItemRow = Lumina.Excel.Sheets.Item;
 using Dalamud.Game;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace MassWithdraw.Windows;
 
@@ -858,12 +859,15 @@ public partial class MainWindow
      * <param name="targetSlot">Outputs the slot index of the stackable item</param>
      * <return type="bool">True if a valid stackable slot is found; otherwise, false</return>
      */
-    private unsafe bool FindStackableSlot(uint itemId, out GameStructs.InventoryType targetContainer, out int targetSlot, bool retainerToInv)
+    private unsafe bool FindStackableSlot(uint itemId, out GameStructs.InventoryType targetContainer, out int targetSlot, bool retainerToInv, bool isHQ)
     {
+        GameStructs.InventoryType[] currentPagesList = [];
         if (retainerToInv) {
             targetContainer = default;
+            currentPagesList = PlayerInventoryPages;
         } else {
             targetContainer = GameStructs.InventoryType.RetainerPage1;
+            currentPagesList = RetainerPages;
         }
         targetSlot = -1;
 
@@ -881,48 +885,30 @@ public partial class MainWindow
         int maxStack = (int)row.Value.StackSize;
         if (maxStack <= 1)
             return false;
-        if (retainerToInv) {
-            foreach (var page in PlayerInventoryPages)
+
+        foreach (var page in currentPagesList)
+        {
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+                continue;
+
+            for (int slot = 0; slot < container->Size; slot++)
             {
-                var container = inv->GetInventoryContainer(page);
-                if (container == null)
+                var s = container->GetInventorySlot(slot);
+                bool targetHq = s->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
+                if (s == null)
                     continue;
 
-                for (int slot = 0; slot < container->Size; slot++)
+                if ((targetHq && !isHQ) || (!targetHq && isHQ))
+                    continue;
+                
+                if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack)
                 {
-                    var s = container->GetInventorySlot(slot);
-                    if (s == null)
-                        continue;
-                    
-                    if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack)
-                    {
-                        targetContainer = page;
-                        targetSlot = slot;
-                        return true;
-                    }
+                    targetContainer = page;
+                    targetSlot = slot;
+                    return true;
                 }
             }
-        } else {
-            foreach (var page in RetainerPages)
-            {
-                var container = inv->GetInventoryContainer(page);
-                if (container == null)
-                    continue;
-
-                for (int slot = 0; slot < container->Size; slot++)
-                {
-                    var s = container->GetInventorySlot(slot);
-                    if (s == null)
-                        continue;
-                    
-                    if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack)
-                    {
-                        targetContainer = page;
-                        targetSlot = slot;
-                        return true;
-                    }
-                }
-            }            
         }
         
         return false;
@@ -1173,6 +1159,7 @@ public partial class MainWindow
                     continue;
 
                 uint itemId = it->ItemId;
+                bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
                 int quantity = it->Quantity;
 
                 var row = GetItemRowById(itemId);
@@ -1190,7 +1177,7 @@ public partial class MainWindow
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
 
-                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, true) &&
+                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, true,originHQ) &&
                     !FindFreeBagSlot(out targetContainer, out targetSlot, true))
                 {
                     StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
@@ -1246,6 +1233,7 @@ public partial class MainWindow
                     continue;
 
                 uint itemId = it->ItemId;
+                bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
                 int quantity = it->Quantity;
 
                 var row = GetItemRowById(itemId);
@@ -1263,7 +1251,7 @@ public partial class MainWindow
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
 
-                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, false) &&
+                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, false,originHQ) &&
                     !FindFreeBagSlot(out targetContainer, out targetSlot, false))
                 {
                     StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
