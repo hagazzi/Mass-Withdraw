@@ -255,13 +255,15 @@ public partial class MainWindow
     private static bool IsCraftingMaterial(ItemRow item)
     {
         bool isMaterial = materialsCategoryIds.Contains(item.ItemSearchCategory.RowId);
+        bool isSeaFood = item.ItemSearchCategory.RowId == 46;
+        bool isCMaterial = isMaterial || isSeaFood;
         bool hasNoAction = item.ItemAction.RowId == 0;
         bool isGlamourPrism = item.RowId == 21800;
         bool isMarineWax = item.RowId == 23222; //has itemsearch category 60 (miscellany)
-
+        //uicategory 56 => parts like 5580 "vanya silk crakow lining"   
         bool regularCraftingMat =             
         (
-            isMaterial && 
+            isCMaterial && 
             hasNoAction && 
             !isGlamourPrism && 
             !IsSchematicBoardMaterial(item) && 
