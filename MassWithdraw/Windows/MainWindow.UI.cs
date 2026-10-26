@@ -298,8 +298,9 @@ public partial class MainWindow : Window, IDisposable
             (SubmersiblePartsId,  "Submersible parts"),
             (SchematicBoardId,    "Schematic materials"),
             (DeployableMaterialsId, "Deployable materials"),
-            (HousingItemsId,       "Housing"),
-            (UhousingItemsId,      "Housing event"),
+            (HousingItemsId,      "Housing"),
+            (UhousingItemsId,     "Housing event"),
+            (BouquetsId,          "Bouquets"),
         };
 
         foreach (var (id, label) in categories)

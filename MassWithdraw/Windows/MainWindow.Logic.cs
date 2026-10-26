@@ -7,7 +7,7 @@ using Lumina.Excel;
 using Dalamud.Plugin.Services;
 using GameStructs = FFXIVClientStructs.FFXIV.Client.Game;
 using ItemRow = Lumina.Excel.Sheets.Item;
-
+using Dalamud.Game;
 
 namespace MassWithdraw.Windows;
 
@@ -29,7 +29,8 @@ public partial class MainWindow
         SchematicBoardId   = 999011,
         DeployableMaterialsId = 999012,
         HousingItemsId = 999013,
-        UhousingItemsId = 999014;
+        UhousingItemsId = 999014,
+        BouquetsId = 999015;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -46,7 +47,8 @@ public partial class MainWindow
         [SchematicBoardId]    = IsSchematicBoardMaterial,
         [DeployableMaterialsId]= IsDeployableMaterial,
         [HousingItemsId]      = IsHousingItem,
-        [UhousingItemsId]      = IsUntradableHousingItem,
+        [UhousingItemsId]     = IsUntradableHousingItem,
+        [BouquetsId]          = IsBouquetItem,
     };
     private static readonly HashSet<uint> materiaCategoryIds   = [57];
     private static readonly HashSet<uint> materialsCategoryIds = [44, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59];
@@ -69,6 +71,7 @@ public partial class MainWindow
         GameStructs.InventoryType.Inventory3,
         GameStructs.InventoryType.Inventory4,
     };
+    
 #endregion
 
 #region Types
@@ -118,7 +121,7 @@ public partial class MainWindow
     private static ItemRow? GetItemRowById(uint itemId)
     {
         if (itemSheetCache == null)
-            itemSheetCache = Plugin.DataManager.GetExcelSheet<ItemRow>();
+            itemSheetCache = Plugin.DataManager.GetExcelSheet<ItemRow>(ClientLanguage.English);
 
         return itemSheetCache?.GetRow(itemId);
     }
@@ -470,7 +473,7 @@ public partial class MainWindow
     } 
 
     /**
-     * * Determines whether the given item is a untradable housing item
+     * * Determines whether the given item is a untradable housing item 
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item belongs to a known submersible parts search category</return>
      */
@@ -481,6 +484,30 @@ public partial class MainWindow
         bool isHousing = uhousingItemsCategoryIds.Contains(item.ItemUICategory.RowId);                        
         return isHousing && untradable;
     }          
+
+    /**
+     * * Determines whether the given item is a bouquet housing item 
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item belongs to a known submersible parts search category</return>
+     */
+    private static bool IsBouquetItem(ItemRow item)
+    {
+        //Dictionary<ClientLanguage, string> BouquetWord = new()
+        //{
+            //[ClientLanguage.English]  = "Bouquets can be placed within select vases for display in estates.",
+            //[ClientLanguage.French]   = "Peut être disposé dans un vase spécial",
+            //[ClientLanguage.German]   = "Kann in spezielle Vasen gestellt werden.",
+            //[ClientLanguage.Japanese] = "特定の花瓶に挿すことができる",
+        //};
+        HashSet<uint> uBouquetItemsCategoryIds = [61];
+        //var word = BouquetWord[Plugin.DataManager.Language];
+        bool tradable = item.ItemSearchCategory.RowId > 0;
+        bool isBouquet = uBouquetItemsCategoryIds.Contains(item.ItemUICategory.RowId);
+        bool describesBouquet = item.Description.ToString().Contains("Bouquets can be placed within select vases for display in estates.", StringComparison.OrdinalIgnoreCase);                        
+        return isBouquet && tradable && describesBouquet;
+    }          
+
+
 
 #endregion
 
