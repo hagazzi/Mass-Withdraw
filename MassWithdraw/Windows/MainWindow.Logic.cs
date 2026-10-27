@@ -327,6 +327,7 @@ public partial class MainWindow
         bool craftMaterialsCurrencyOther = (
             //(item.RowId == ) || //
             //not really treasure materials but cost scrip or tomestone, and are used for white gear glamour craft
+            (item.RowId == 45987) || //cronopio skin - 20 tomestone of mathematics
             (item.RowId == 39595) || //gripgel - 250 purple crafting scrip
             (item.RowId == 7775) || //glazenut - gardening
             (item.RowId == 13754) || //blood pepper - gardening
@@ -463,7 +464,6 @@ public partial class MainWindow
             (item.RowId == 12225) || //deep-red crystal            
             (item.RowId == 12231) || //farreach canvas
             (item.RowId == 12220) || //red moko grass
-            (item.RowId == 13758) || //cassia block
             (item.RowId == 13758) || //cassia block
             (item.RowId == 12232) || //cassia lumber
             (item.RowId == 12221) || //cassia log
