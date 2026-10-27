@@ -1208,13 +1208,17 @@ public partial class MainWindow
 
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
+                bool foundstackable = !FindStackableSlot(itemId, out targetContainer, out targetSlot, true,originHQ);
 
-                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, true,originHQ) &&
+                if (!foundstackable &&
                     !FindFreeBagSlot(out targetContainer, out targetSlot, true))
                 {
                     StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
                     return false;
                 }
+
+                if (foundstackable)
+                    currentInventorySlotIndex--; //systematically do a recheck on the same slot if it found a stackable item                
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
@@ -1293,7 +1297,7 @@ public partial class MainWindow
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
                 bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, false,originHQ);
-                
+
                 if (!foundstackable &&
                     !FindFreeBagSlot(out targetContainer, out targetSlot, false))
                 {
