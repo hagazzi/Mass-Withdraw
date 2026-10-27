@@ -23,15 +23,16 @@ public partial class MainWindow
         ConsumablesId        = 999004,
         RegisterableId      = 999005,
         GearBoxId           = 999006,
-        CraftingMaterialsId  = 999007,
-        CurrencyOtherId  = 999008,
-        TreasureMaterialsId = 999009,
-        SubmersiblePartsId   = 999010,
-        SchematicBoardId   = 999011,
-        DeployableMaterialsId = 999012,
-        HousingItemsId = 999013,
-        UhousingItemsId = 999014,
-        BouquetsId = 999015;
+        CatalystId          = 999007,
+        CraftingMaterialsId  = 999008,
+        CurrencyOtherId  = 999009,
+        TreasureMaterialsId = 999010,
+        SubmersiblePartsId   = 999011,
+        SchematicBoardId   = 999012,
+        DeployableMaterialsId = 999013,
+        HousingItemsId = 999014,
+        UhousingItemsId = 999015,
+        BouquetsId = 999016;
 
     private readonly Dictionary<uint, Func<ItemRow, bool>> categoryFilters = new()
     {
@@ -41,6 +42,7 @@ public partial class MainWindow
         [ConsumablesId]       = IsConsumable,
         [RegisterableId]      = IsRegisterableMiscellany,
         [GearBoxId]           = IsGearCoffer,
+        [CatalystId]          = IsCatalyst,
         [CraftingMaterialsId] = IsCraftingMaterial,
         [CurrencyOtherId]     = IsCurrencyOtherMaterial,
         [TreasureMaterialsId] = IsTreasureMaterial,
@@ -72,6 +74,25 @@ public partial class MainWindow
         GameStructs.InventoryType.Inventory3,
         GameStructs.InventoryType.Inventory4,
     };
+    private static readonly GameStructs.InventoryType[] PlayerInventoryArmoryPages =
+    {
+        GameStructs.InventoryType.Inventory1,
+        GameStructs.InventoryType.Inventory2,
+        GameStructs.InventoryType.Inventory3,
+        GameStructs.InventoryType.Inventory4,
+        GameStructs.InventoryType.ArmoryBody,
+        GameStructs.InventoryType.ArmoryEar,
+        GameStructs.InventoryType.ArmoryFeets,
+        GameStructs.InventoryType.ArmoryHands,
+        GameStructs.InventoryType.ArmoryHead,
+        GameStructs.InventoryType.ArmoryLegs,
+        GameStructs.InventoryType.ArmoryMainHand,
+        GameStructs.InventoryType.ArmoryNeck,
+        GameStructs.InventoryType.ArmoryOffHand,
+        GameStructs.InventoryType.ArmoryRings,
+        GameStructs.InventoryType.ArmoryWaist,
+        GameStructs.InventoryType.ArmoryWrist,        
+    };    
     
 #endregion
 
@@ -249,6 +270,17 @@ public partial class MainWindow
     }
 
     /**
+     * * Determines whether the given item is a catalyst. (glamour prism, dispeller, graded dark matter, dark matter cluster)
+     * <param name="item">The item row to evaluate</param>
+     * <return type="bool">True if the item is in materials categories and has no action</return>
+     */
+    private static bool IsCatalyst(ItemRow item)
+    {
+        bool isCatalystUiCategory = item.ItemUICategory.RowId == 60;
+        return isCatalystUiCategory;
+    }
+
+    /**
      * * Determines whether the given item is a crafting material
      * <param name="item">The item row to evaluate</param>
      * <return type="bool">True if the item is in materials categories and has no action</return>
@@ -262,11 +294,15 @@ public partial class MainWindow
         bool isGlamourPrism = item.RowId == 21800;
         bool isMarineWax = item.RowId == 23222; //has itemsearch category 60 (miscellany)
         //uicategory 56 => parts like 5580 "vanya silk crakow lining"   
+        //uicategory 60 => catalyst ? (glamour prism, darkmatter) / searchcategory 59
+        //using FFXIVClientStructs.FFXIV.Client.UI.Agent; //from FCCH MoveManager.cs
+        //AgentInventoryContext.Instance()->LowerItemQuality(item, inventorypage, slot, 0);
         bool regularCraftingMat =             
         (
             isCMaterial && 
             hasNoAction && 
-            !isGlamourPrism && 
+            !isGlamourPrism && //redundant with catalyst
+            !IsCatalyst(item) &&
             !IsSchematicBoardMaterial(item) && 
             !IsDeployableMaterial(item) && 
             !IsTreasureMaterial(item) &&
@@ -529,68 +565,47 @@ public partial class MainWindow
      */
     private unsafe void RecountRetainerCategoryCounts()
     {
+        GameStructs.InventoryType[] containerList;
+        if (noInverse)
+        {
+            containerList = RetainerPages;
+        } 
+        else
+        {
+            containerList = PlayerInventoryPages;
+        }
+
         retainerCategoryCounts.Clear();
 
         var inv = GameStructs.InventoryManager.Instance();
         if (inv == null)
             return;
 
-        if (noInverse)
+        foreach (var page in containerList)
         {
-            foreach (var page in RetainerPages)
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+                continue;
+
+            for (int slotIndex = 0; slotIndex < container->Size; slotIndex++)
             {
-                var container = inv->GetInventoryContainer(page);
-                if (container == null)
+                var slot = container->GetInventorySlot(slotIndex);
+                if (slot == null || slot->ItemId == 0 || slot->Quantity == 0)
                     continue;
 
-                for (int slotIndex = 0; slotIndex < container->Size; slotIndex++)
-                {
-                    var slot = container->GetInventorySlot(slotIndex);
-                    if (slot == null || slot->ItemId == 0 || slot->Quantity == 0)
-                        continue;
-
-                    var itemRow = GetItemRowById(slot->ItemId);
-                    if (itemRow == null)
-                        continue;
-
-                    var row = itemRow.Value;
-
-                    foreach (var (categoryId, filter) in categoryFilters)
-                    {
-                        if (filter(row))
-                            IncrementCategory(categoryId);
-                    }
-                }
-            }            
-        } 
-        else
-        {
-            foreach (var page in PlayerInventoryPages)
-            {
-                var container = inv->GetInventoryContainer(page);
-                if (container == null)
+                var itemRow = GetItemRowById(slot->ItemId);
+                if (itemRow == null)
                     continue;
 
-                for (int slotIndex = 0; slotIndex < container->Size; slotIndex++)
+                var row = itemRow.Value;
+
+                foreach (var (categoryId, filter) in categoryFilters)
                 {
-                    var slot = container->GetInventorySlot(slotIndex);
-                    if (slot == null || slot->ItemId == 0 || slot->Quantity == 0)
-                        continue;
-
-                    var itemRow = GetItemRowById(slot->ItemId);
-                    if (itemRow == null)
-                        continue;
-
-                    var row = itemRow.Value;
-
-                    foreach (var (categoryId, filter) in categoryFilters)
-                    {
-                        if (filter(row))
-                            IncrementCategory(categoryId);
-                    }
+                    if (filter(row))
+                        IncrementCategory(categoryId);
                 }
-            }              
-        }
+            }
+        }            
 
     }
 
@@ -786,6 +801,7 @@ public partial class MainWindow
      * <param name="itemId">The unique ID of the item to check for</param>
      * <return type="bool">True if the item is present in the player’s inventory; otherwise, false</return>
      */
+    //todo merge hasitemininventory and hasiteminretainer in hasitemintargetinventory
     private static unsafe bool HasItemInInventory(uint itemId)
     {
         if (itemId == 0)
@@ -1126,7 +1142,7 @@ public partial class MainWindow
 
         Plugin.ChatGui.Print(message);
     }
-
+    //todo merge trymoveoneitem and trymoveoneitemreverse in trymoveoneitemtowardtarget
     private unsafe bool TryMoveOneItem()
     {
         var inv = GameStructs.InventoryManager.Instance();
