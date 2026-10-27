@@ -1248,7 +1248,15 @@ public partial class MainWindow
 
             while (currentInventorySlotIndex < pageSize)
             {
-                int slot = currentInventorySlotIndex++;
+                if (currentInventorySlotIndex > 0)
+                {
+                    var tempinv = container->GetInventorySlot(currentInventorySlotIndex-1);
+                    if (!(tempinv == null || tempinv->ItemId == 0 || tempinv->Quantity == 0))
+                    {
+                        currentInventorySlotIndex--;
+                    }
+                }
+                int slot = currentInventorySlotIndex++; //need to check whether slot is empty becore incrementing (case where stackable was found)
                 var it = container->GetInventorySlot(slot);
                 if (it == null || it->ItemId == 0 || it->Quantity == 0)
                     continue;
