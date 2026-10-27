@@ -277,7 +277,12 @@ public partial class MainWindow
     private static bool IsCatalyst(ItemRow item)
     {
         bool isCatalystUiCategory = item.ItemUICategory.RowId == 60;
-        return isCatalystUiCategory;
+        bool isGlamourPrism = item.RowId == 21800;
+        return 
+        (
+            isCatalystUiCategory && 
+            !isGlamourPrism
+        );
     }
 
     /**
