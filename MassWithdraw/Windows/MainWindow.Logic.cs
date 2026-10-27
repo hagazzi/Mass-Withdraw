@@ -1174,6 +1174,15 @@ public partial class MainWindow
 
             while (currentRetainerSlotIndex < pageSize)
             {
+
+                if (currentInventorySlotIndex > 0)
+                {
+                    var tempinv = container->GetInventorySlot(currentInventorySlotIndex-1);
+                    if (!(tempinv == null || tempinv->ItemId == 0 || tempinv->Quantity == 0))
+                    {
+                        currentInventorySlotIndex--;
+                    }
+                }                
                 int slot = currentRetainerSlotIndex++;
                 var it = container->GetInventorySlot(slot);
                 if (it == null || it->ItemId == 0 || it->Quantity == 0)
