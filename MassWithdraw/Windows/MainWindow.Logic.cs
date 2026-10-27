@@ -1175,6 +1175,7 @@ public partial class MainWindow
             while (currentRetainerSlotIndex < pageSize)
             {
 
+                /* possibly not the right implementation
                 if (currentInventorySlotIndex > 0)
                 {
                     var tempinv = container->GetInventorySlot(currentInventorySlotIndex-1);
@@ -1182,7 +1183,8 @@ public partial class MainWindow
                     {
                         currentInventorySlotIndex--;
                     }
-                }                
+                }
+                */                
                 int slot = currentRetainerSlotIndex++;
                 var it = container->GetInventorySlot(slot);
                 if (it == null || it->ItemId == 0 || it->Quantity == 0)
@@ -1257,6 +1259,7 @@ public partial class MainWindow
 
             while (currentInventorySlotIndex < pageSize)
             {
+                /* this looks it would create actual issue when using filter
                 if (currentInventorySlotIndex > 0)
                 {
                     var tempinv = container->GetInventorySlot(currentInventorySlotIndex-1);
@@ -1265,6 +1268,7 @@ public partial class MainWindow
                         currentInventorySlotIndex--;
                     }
                 }
+                */
                 int slot = currentInventorySlotIndex++; //need to check whether slot is empty becore incrementing (case where stackable was found)
                 var it = container->GetInventorySlot(slot);
                 if (it == null || it->ItemId == 0 || it->Quantity == 0)
@@ -1288,13 +1292,17 @@ public partial class MainWindow
 
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
-
-                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot, false,originHQ) &&
+                bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, false,originHQ);
+                
+                if (!foundstackable &&
                     !FindFreeBagSlot(out targetContainer, out targetSlot, false))
                 {
                     StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
                     return false;
                 }
+
+                if (foundstackable)
+                    currentInventorySlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
