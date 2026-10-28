@@ -1413,6 +1413,9 @@ public partial class MainWindow
                 bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
                 int quantity = it->Quantity;
 
+                if (originHQ)
+                    Plugin.ChatGui.Print("[MassWithdraw] That one is HQ for sure.");
+
                 var row = GetItemRowById(itemId);
                 if (row == null)
                     continue;                
@@ -1453,13 +1456,12 @@ public partial class MainWindow
                     return true;
                 }   
                 
-                if (foundstackable)
+                if (foundstackable) //only if previously hqitem can be stacked 
+                {
                     _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
-
-                if(!foundstackable && !originHQ)
-                    continue;
-
-                return true;
+                    return true;
+                }
+                
             }
 
             currentPageIndex++;
