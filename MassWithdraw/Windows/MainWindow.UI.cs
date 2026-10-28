@@ -209,6 +209,7 @@ public partial class MainWindow : Window, IDisposable
                 noInverse = false;
                 RecountRetainerCategoryCounts();
             }
+            ImGui.Checkbox("LQ", ref LowerQuality);
         }
         ImGui.EndGroup();
 

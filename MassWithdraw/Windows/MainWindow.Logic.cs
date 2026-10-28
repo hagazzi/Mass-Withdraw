@@ -9,6 +9,7 @@ using GameStructs = FFXIVClientStructs.FFXIV.Client.Game;
 using ItemRow = Lumina.Excel.Sheets.Item;
 using Dalamud.Game;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace MassWithdraw.Windows;
 
@@ -124,6 +125,7 @@ public partial class MainWindow
     private int currentPageIndex = 0;
     private int currentSlotIndex = 0;
     private bool noInverse = true;
+    private bool LowerQuality = false;
     private HashSet<uint>? seenUniqueDuringRun;
     private DateTime nextMoveAtUtc = DateTime.MinValue;
 
@@ -1193,18 +1195,18 @@ public partial class MainWindow
                     return false;
                 }
 
-                if (foundstackable) //if (foundstackable || (originHQ && checkboxLQ))
+                if (foundstackable || (originHQ && LowerQuality)) //if (foundstackable || (originHQ && checkboxLQ))
                     currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
                     return false;
 
-                //if (originHQ && checkboxLQ && isCraftingMats(row.Value))
-                //{
-                    //AgentInventoryContext.Instance()->LowerItemQuality(it, currentPageIndex, slot, 0);
-                    //return true;
-                //}   
+                if (originHQ && LowerQuality && IsCraftingMaterial(row.Value))
+                {
+                    AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);
+                    return true;
+                }   
                 
 
                 _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
