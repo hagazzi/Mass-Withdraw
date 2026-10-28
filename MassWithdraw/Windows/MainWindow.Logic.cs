@@ -121,10 +121,6 @@ public partial class MainWindow
     private CancellationTokenSource? cancellationTokenSource;
 
     private int transferDelayMsActive = 0;
-    private int currentRetainerPageIndex = 0;
-    private int currentRetainerSlotIndex = 0;
-    private int currentInventoryPageIndex = 0;
-    private int currentInventorySlotIndex = 0;
     private int currentPageIndex = 0;
     private int currentSlotIndex = 0;
     private bool noInverse = true;
@@ -809,6 +805,47 @@ public partial class MainWindow
      * <return type="bool">True if the item is present in the player’s inventory; otherwise, false</return>
      */
     //todo merge hasitemininventory and hasiteminretainer in hasitemintargetinventory
+    private static unsafe bool HasItemInTargetInventory(uint itemId, bool regularDirection)
+    {
+        GameStructs.InventoryType[] containerList;
+        if (regularDirection)
+        {
+            containerList = PlayerInventoryPages;    
+        }
+        else
+        {
+            containerList = RetainerPages;
+        }
+        if (itemId == 0)
+            return false;
+
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+            return false;
+
+        foreach (var page in containerList)
+        {
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+                continue;
+
+            for (int slot = 0; slot < container->Size; slot++)
+            {
+                var currentSlot = container->GetInventorySlot(slot);
+                if (currentSlot == null)
+                    continue;
+
+                bool isSameItem = currentSlot->ItemId == itemId;
+                bool hasQuantity = currentSlot->Quantity > 0;
+
+                if (isSameItem && hasQuantity)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     private static unsafe bool HasItemInInventory(uint itemId)
     {
         if (itemId == 0)
@@ -1066,10 +1103,6 @@ public partial class MainWindow
         transferDelayMsActive = transferDelayMs;
         currentPageIndex = 0;
         currentSlotIndex = 0;
-        currentRetainerPageIndex = 0;
-        currentRetainerSlotIndex = 0;
-        currentInventoryPageIndex = 0;
-        currentInventorySlotIndex = 0;
         seenUniqueDuringRun = new HashSet<uint>();
         nextMoveAtUtc = DateTime.UtcNow;
     }
@@ -1152,8 +1185,10 @@ public partial class MainWindow
 
         Plugin.ChatGui.Print(message);
     }
-    //todo merge trymoveoneitem and trymoveoneitemreverse in trymoveoneitemtowardtarget
 
+    //todo if !noInverse && originHQ && chckboxLQ 
+    //lower quality one round first then move
+    //check for isCraftingMaterial 
     private unsafe bool TryMoveOneItemTowardTarget()
     {
         GameStructs.InventoryType[] containerList;
@@ -1208,16 +1243,8 @@ public partial class MainWindow
                 {
                     if (!seenUniqueDuringRun.Add(itemId))
                         continue;
-					if (noInverse)
-					{
-						if (HasItemInInventory(itemId))
-							continue;						
-					}
-					else
-					{
-						if (HasItemInRetainer(itemId))
-							continue;						
-					}
+                    if (HasItemInTargetInventory(itemId,noInverse))
+                        continue;						
                 }
 
                 GameStructs.InventoryType targetContainer;
@@ -1238,9 +1265,9 @@ public partial class MainWindow
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
                     return false;
 
-                //if (originHQ && checkboxLQ)
+                //if (originHQ && checkboxLQ && isCraftingMats(row.Value))
                 //{
-                    //AgentInventoryContext.Instance()->LowerItemQuality(item, inventorypage, slot, 0);
+                    //AgentInventoryContext.Instance()->LowerItemQuality(it, currentPageIndex, slot, 0);
                     //return true;
                 //}   
                 
@@ -1256,194 +1283,6 @@ public partial class MainWindow
         StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
         return false;
     }
-
-    private unsafe bool TryMoveOneItem()
-    {
-        var inv = GameStructs.InventoryManager.Instance();
-        if (inv == null)
-        {
-            StopTransfer("[MassWithdraw] InventoryManager not available.");
-            return false;
-        }
-
-        seenUniqueDuringRun ??= new HashSet<uint>();
-
-        while (currentRetainerPageIndex < RetainerPages.Length)
-        {
-            var page = RetainerPages[currentRetainerPageIndex];
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-            {
-                currentRetainerPageIndex++;
-                currentRetainerSlotIndex = 0;
-                continue;
-            }
-
-            int pageSize = container->Size;
-
-            while (currentRetainerSlotIndex < pageSize)
-            {
-
-                /* possibly not the right implementation
-                if (currentInventorySlotIndex > 0)
-                {
-                    var tempinv = container->GetInventorySlot(currentInventorySlotIndex-1);
-                    if (!(tempinv == null || tempinv->ItemId == 0 || tempinv->Quantity == 0))
-                    {
-                        currentInventorySlotIndex--;
-                    }
-                }
-                */                
-                int slot = currentRetainerSlotIndex++;
-                var it = container->GetInventorySlot(slot);
-                if (it == null || it->ItemId == 0 || it->Quantity == 0)
-                    continue;
-
-                uint itemId = it->ItemId;
-                bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
-                int quantity = it->Quantity;
-
-                var row = GetItemRowById(itemId);
-                if (row == null || !MatchesTransferFilters(row.Value))
-                    continue;
-
-                if (row.Value.IsUnique)
-                {
-                    if (!seenUniqueDuringRun.Add(itemId))
-                        continue;
-                    if (HasItemInInventory(itemId))
-                        continue;
-                }
-
-                GameStructs.InventoryType targetContainer;
-                int targetSlot;
-                bool foundstackable = !FindStackableSlot(itemId, out targetContainer, out targetSlot, true,originHQ);
-
-                if (!foundstackable &&
-                    !FindFreeBagSlot(out targetContainer, out targetSlot, true))
-                {
-                    StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
-                    return false;
-                }
-
-                if (foundstackable) //if (foundstackable || (originHQ && checkboxLQ))
-                    currentInventorySlotIndex--; //systematically do a recheck on the same slot if it found a stackable item                
-
-                var currentSlot = container->GetInventorySlot(slot);
-                if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
-                    return false;
-
-                //if (originHQ && checkboxLQ)
-                //{
-                  //  
-                //}                    
-
-                _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
-                return true;
-            }
-
-            currentRetainerPageIndex++;
-            currentRetainerSlotIndex = 0;
-        }
-
-        StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
-        return false;
-    }
-
-    private unsafe bool TryMoveOneItemReverse()
-    {
-        var inv = GameStructs.InventoryManager.Instance();
-        if (inv == null)
-        {
-            StopTransfer("[MassWithdraw] InventoryManager not available.");
-            return false;
-        }
-
-        seenUniqueDuringRun ??= new HashSet<uint>();
-        //Plugin.ChatGui.Print($"currentInventoryPageIndex = {currentInventoryPageIndex}");
-        //Plugin.ChatGui.Print($"PlayerInventoryPages.Length = {PlayerInventoryPages.Length}");
-        while (currentInventoryPageIndex < PlayerInventoryPages.Length)
-        {
-            var page = PlayerInventoryPages[currentInventoryPageIndex];
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-            {
-                currentInventoryPageIndex++;
-                currentInventorySlotIndex = 0;
-                continue;
-            }
-
-            int pageSize = container->Size;
-
-            while (currentInventorySlotIndex < pageSize)
-            {
-                /* this looks it would create actual issue when using filter
-                if (currentInventorySlotIndex > 0)
-                {
-                    var tempinv = container->GetInventorySlot(currentInventorySlotIndex-1);
-                    if (!(tempinv == null || tempinv->ItemId == 0 || tempinv->Quantity == 0))
-                    {
-                        currentInventorySlotIndex--;
-                    }
-                }
-                */
-                int slot = currentInventorySlotIndex++; //need to check whether slot is empty becore incrementing (case where stackable was found)
-                var it = container->GetInventorySlot(slot);
-                if (it == null || it->ItemId == 0 || it->Quantity == 0)
-                    continue;
-
-                uint itemId = it->ItemId;
-                bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
-                int quantity = it->Quantity;
-
-                var row = GetItemRowById(itemId);
-                if (row == null || !MatchesTransferFilters(row.Value))
-                    continue;
-
-                if (row.Value.IsUnique)
-                {
-                    if (!seenUniqueDuringRun.Add(itemId))
-                        continue;
-                    if (HasItemInRetainer(itemId))
-                        continue;
-                }
-
-                GameStructs.InventoryType targetContainer;
-                int targetSlot;
-                bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, false,originHQ);
-
-                if (!foundstackable &&
-                    !FindFreeBagSlot(out targetContainer, out targetSlot, false))
-                {
-                    StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
-                    return false;
-                }
-
-                if (foundstackable) //if (foundstackable || (originHQ && checkboxLQ))
-                    currentInventorySlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
-
-                var currentSlot = container->GetInventorySlot(slot);
-                if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
-                    return false;
-
-                //if (originHQ && checkboxLQ)
-                //{
-                    //AgentInventoryContext.Instance()->LowerItemQuality(item, inventorypage, slot, 0);
-                    //return true;
-                //}   
-                
-
-                _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
-                return true;
-            }
-
-            currentInventoryPageIndex++;
-            currentInventorySlotIndex = 0;
-        }
-
-        StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
-        return false;
-    }       
 
 #endregion
 
