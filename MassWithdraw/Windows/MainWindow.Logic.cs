@@ -1070,14 +1070,6 @@ public partial class MainWindow
         if (now < nextMoveAtUtc)
             return;
 
-        //bool didMove;
-        //if (noInverse) {
-            //didMove = TryMoveOneItem();
-        //} else {
-           // didMove = TryMoveOneItemReverse();
-        //}
-        //bool didMove = TryMoveOneItem();
-        //bool didMove = TryMoveOneItemReverse();
         bool didMove = TryMoveOneItemTowardTarget();
 
         if (!transferSession.Running)
@@ -1209,7 +1201,9 @@ public partial class MainWindow
 
                 if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value) && !noInverse)
                 {
-                    AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);
+                    int delay = delayRandom.Next(850, 1250);
+                    nextMoveAtUtc = DateTime.UtcNow.AddMilliseconds(delay);
+                    AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);                    
                     return true;
                 }   
                 
