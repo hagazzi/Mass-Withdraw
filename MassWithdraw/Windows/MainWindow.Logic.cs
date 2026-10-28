@@ -1437,8 +1437,9 @@ public partial class MainWindow
                 //}
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
-                bool searchInInventoryOnly = true;
-                bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ);
+
+                //bool searchInInventoryOnly = true;
+                //bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ);
 
                 //if (!foundstackable &&
                     //!FindFreeBagSlot(out targetContainer, out targetSlot, noInverse))
@@ -1447,7 +1448,8 @@ public partial class MainWindow
                     //return false;
                 //}
 
-                if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
+                if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value)) //if (foundstackable || (originHQ && checkboxLQ))
+                //if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
                     currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
 
                 var currentSlot = container->GetInventorySlot(slot);
@@ -1466,12 +1468,12 @@ public partial class MainWindow
                     return true;
                 }   
                 
-                if (foundstackable) //only if previously hqitem can be stacked 
-                {
-                    Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
-                    _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
-                    return true;
-                }
+                //if (foundstackable) //only if previously hqitem can be stacked 
+                //{
+                   //Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
+                    //_ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
+                    //return true;
+                //}
                 
             }
 
