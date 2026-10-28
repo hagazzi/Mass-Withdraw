@@ -1407,7 +1407,10 @@ public partial class MainWindow
                 int slot = currentSlotIndex++; //need to check whether slot is empty becore incrementing (case where stackable was found)
                 var it = container->GetInventorySlot(slot);
                 if (it == null || it->ItemId == 0 || it->Quantity == 0)
+                {
                     continue;
+                }
+                    
 
                 uint itemId = it->ItemId;
                 bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
@@ -1418,7 +1421,10 @@ public partial class MainWindow
 
                 var row = GetItemRowById(itemId);
                 if (row == null)
-                    continue;                
+                {
+                    continue;
+                }
+                                    
                 //if (row == null || !MatchesTransferFilters(row.Value))
                     //continue;
 
@@ -1446,11 +1452,15 @@ public partial class MainWindow
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
+                {
                     return false;
+                }
+                    
 
                 if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))
                 {
                     int delay = delayRandom.Next(850, 1250);
+                    Plugin.ChatGui.Print("[MassWithdraw] Found HQ, Lowering it.");
                     nextMoveAtUtc = DateTime.UtcNow.AddMilliseconds(delay);
                     AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);                    
                     return true;
@@ -1458,6 +1468,7 @@ public partial class MainWindow
                 
                 if (foundstackable) //only if previously hqitem can be stacked 
                 {
+                    Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
                     _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
                     return true;
                 }
@@ -1468,7 +1479,7 @@ public partial class MainWindow
             currentSlotIndex = 0;
         }
 
-        StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
+        StopLQ($"[MassWithdraw] Done. Moved total: {LQSession.LQified} item(s).");
         return false;
     }    
 
