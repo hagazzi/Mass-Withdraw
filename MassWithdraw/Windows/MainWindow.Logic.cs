@@ -803,8 +803,7 @@ public partial class MainWindow
      * * Checks if a specific item exists in the player’s inventory
      * <param name="itemId">The unique ID of the item to check for</param>
      * <return type="bool">True if the item is present in the player’s inventory; otherwise, false</return>
-     */
-    //todo merge hasitemininventory and hasiteminretainer in hasitemintargetinventory
+     */    
     private static unsafe bool HasItemInTargetInventory(uint itemId, bool regularDirection)
     {
         GameStructs.InventoryType[] containerList;
@@ -845,70 +844,6 @@ public partial class MainWindow
 
         return false;
     }
-
-    private static unsafe bool HasItemInInventory(uint itemId)
-    {
-        if (itemId == 0)
-            return false;
-
-        var inv = GameStructs.InventoryManager.Instance();
-        if (inv == null)
-            return false;
-
-        foreach (var page in PlayerInventoryPages)
-        {
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-                continue;
-
-            for (int slot = 0; slot < container->Size; slot++)
-            {
-                var currentSlot = container->GetInventorySlot(slot);
-                if (currentSlot == null)
-                    continue;
-
-                bool isSameItem = currentSlot->ItemId == itemId;
-                bool hasQuantity = currentSlot->Quantity > 0;
-
-                if (isSameItem && hasQuantity)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static unsafe bool HasItemInRetainer(uint itemId)
-    {
-        if (itemId == 0)
-            return false;
-
-        var inv = GameStructs.InventoryManager.Instance();
-        if (inv == null)
-            return false;
-
-        foreach (var page in RetainerPages)
-        {
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-                continue;
-
-            for (int slot = 0; slot < container->Size; slot++)
-            {
-                var currentSlot = container->GetInventorySlot(slot);
-                if (currentSlot == null)
-                    continue;
-
-                bool isSameItem = currentSlot->ItemId == itemId;
-                bool hasQuantity = currentSlot->Quantity > 0;
-
-                if (isSameItem && hasQuantity)
-                    return true;
-            }
-        }
-
-        return false;
-    }    
 #endregion
 
 #region Slot Selection
