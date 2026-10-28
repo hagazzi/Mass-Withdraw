@@ -125,6 +125,8 @@ public partial class MainWindow
     private int currentRetainerSlotIndex = 0;
     private int currentInventoryPageIndex = 0;
     private int currentInventorySlotIndex = 0;
+    private int currentPageIndex = 0;
+    private int currentSlotIndex = 0;
     private bool noInverse = true;
     private HashSet<uint>? seenUniqueDuringRun;
     private DateTime nextMoveAtUtc = DateTime.MinValue;
@@ -1062,6 +1064,8 @@ public partial class MainWindow
 
         cancellationTokenSource = new CancellationTokenSource();
         transferDelayMsActive = transferDelayMs;
+        currentPageIndex = 0;
+        currentSlotIndex = 0;
         currentRetainerPageIndex = 0;
         currentRetainerSlotIndex = 0;
         currentInventoryPageIndex = 0;
@@ -1091,14 +1095,15 @@ public partial class MainWindow
         if (now < nextMoveAtUtc)
             return;
 
-        bool didMove;
-        if (noInverse) {
-            didMove = TryMoveOneItem();
-        } else {
-            didMove = TryMoveOneItemReverse();
-        }
+        //bool didMove;
+        //if (noInverse) {
+            //didMove = TryMoveOneItem();
+        //} else {
+           // didMove = TryMoveOneItemReverse();
+        //}
         //bool didMove = TryMoveOneItem();
         //bool didMove = TryMoveOneItemReverse();
+        bool didMove = TryMoveOneItemTowardTarget();
 
         if (!transferSession.Running)
             return;
@@ -1148,6 +1153,110 @@ public partial class MainWindow
         Plugin.ChatGui.Print(message);
     }
     //todo merge trymoveoneitem and trymoveoneitemreverse in trymoveoneitemtowardtarget
+
+    private unsafe bool TryMoveOneItemTowardTarget()
+    {
+        GameStructs.InventoryType[] containerList;
+        if (noInverse)
+        {
+            containerList = RetainerPages;
+        }
+        else
+        {
+            containerList = PlayerInventoryPages;
+        }
+
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+        {
+            StopTransfer("[MassWithdraw] InventoryManager not available.");
+            return false;
+        }
+
+        seenUniqueDuringRun ??= new HashSet<uint>();
+        //Plugin.ChatGui.Print($"currentPageIndex = {currentPageIndex}");
+        //Plugin.ChatGui.Print($"containerList.Length = {containerList.Length}");
+        while (currentPageIndex < containerList.Length)
+        {
+            var page = containerList[currentPageIndex];
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+            {
+                currentPageIndex++;
+                currentSlotIndex = 0;
+                continue;
+            }
+
+            int pageSize = container->Size;
+
+            while (currentSlotIndex < pageSize)
+            {
+                int slot = currentSlotIndex++; //need to check whether slot is empty becore incrementing (case where stackable was found)
+                var it = container->GetInventorySlot(slot);
+                if (it == null || it->ItemId == 0 || it->Quantity == 0)
+                    continue;
+
+                uint itemId = it->ItemId;
+                bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
+                int quantity = it->Quantity;
+
+                var row = GetItemRowById(itemId);
+                if (row == null || !MatchesTransferFilters(row.Value))
+                    continue;
+
+                if (row.Value.IsUnique)
+                {
+                    if (!seenUniqueDuringRun.Add(itemId))
+                        continue;
+					if (noInverse)
+					{
+						if (HasItemInInventory(itemId))
+							continue;						
+					}
+					else
+					{
+						if (HasItemInRetainer(itemId))
+							continue;						
+					}
+                }
+
+                GameStructs.InventoryType targetContainer;
+                int targetSlot;
+                bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, noInverse, originHQ);
+
+                if (!foundstackable &&
+                    !FindFreeBagSlot(out targetContainer, out targetSlot, noInverse))
+                {
+                    StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
+                    return false;
+                }
+
+                if (foundstackable) //if (foundstackable || (originHQ && checkboxLQ))
+                    currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
+
+                var currentSlot = container->GetInventorySlot(slot);
+                if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
+                    return false;
+
+                //if (originHQ && checkboxLQ)
+                //{
+                    //AgentInventoryContext.Instance()->LowerItemQuality(item, inventorypage, slot, 0);
+                    //return true;
+                //}   
+                
+
+                _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
+                return true;
+            }
+
+            currentPageIndex++;
+            currentSlotIndex = 0;
+        }
+
+        StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
+        return false;
+    }
+
     private unsafe bool TryMoveOneItem()
     {
         var inv = GameStructs.InventoryManager.Instance();
@@ -1217,12 +1326,17 @@ public partial class MainWindow
                     return false;
                 }
 
-                if (foundstackable)
+                if (foundstackable) //if (foundstackable || (originHQ && checkboxLQ))
                     currentInventorySlotIndex--; //systematically do a recheck on the same slot if it found a stackable item                
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
                     return false;
+
+                //if (originHQ && checkboxLQ)
+                //{
+                  //  
+                //}                    
 
                 _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
                 return true;
@@ -1305,12 +1419,19 @@ public partial class MainWindow
                     return false;
                 }
 
-                if (foundstackable)
+                if (foundstackable) //if (foundstackable || (originHQ && checkboxLQ))
                     currentInventorySlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
                     return false;
+
+                //if (originHQ && checkboxLQ)
+                //{
+                    //AgentInventoryContext.Instance()->LowerItemQuality(item, inventorypage, slot, 0);
+                    //return true;
+                //}   
+                
 
                 _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
                 return true;
