@@ -316,6 +316,11 @@ public partial class MainWindow
 
         return regularCraftingMat || isMarineWax;
     }
+
+    private static bool IsCraftingMaterialAll(ItemRow item)
+    {
+        return IsCraftingMaterial(item) || IsCurrencyOtherMaterial(item) || IsTreasureMaterial(item) || IsSchematicBoardMaterial(item) || IsDeployableMaterial(item);
+    }
     
     /**
      * * Determines whether the given item is a currency bought crafting material
@@ -1195,14 +1200,14 @@ public partial class MainWindow
                     return false;
                 }
 
-                if (foundstackable || (originHQ && LowerQuality)) //if (foundstackable || (originHQ && checkboxLQ))
+                if (foundstackable || (originHQ && LowerQuality && !noInverse && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
                     currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
                     return false;
 
-                if (originHQ && LowerQuality && IsCraftingMaterial(row.Value))
+                if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value) && !noInverse)
                 {
                     AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);
                     return true;
