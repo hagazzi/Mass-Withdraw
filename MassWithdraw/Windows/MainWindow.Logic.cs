@@ -962,6 +962,61 @@ public partial class MainWindow
         return false;
     }
 
+    private unsafe bool FindStackableSlotExcludingCurrent(uint itemId, out GameStructs.InventoryType targetContainer, out int targetSlot, bool retainerToInv, bool isHQ, int currentSlot)
+    {
+        GameStructs.InventoryType[] currentPagesList = [];
+        if (retainerToInv) {
+            targetContainer = default;
+            currentPagesList = PlayerInventoryPages;
+        } else {
+            targetContainer = GameStructs.InventoryType.RetainerPage1;
+            currentPagesList = RetainerPages;
+        }
+        targetSlot = -1;
+
+        if (itemId == 0)
+            return false;
+
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+            return false;
+
+        var row = GetItemRowById(itemId);
+        if (row == null)
+            return false;
+
+        int maxStack = (int)row.Value.StackSize;
+        if (maxStack <= 1)
+            return false;
+
+        foreach (var page in currentPagesList)
+        {
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+                continue;
+
+            for (int slot = 0; slot < container->Size; slot++)
+            {
+                var s = container->GetInventorySlot(slot);
+                bool targetHq = s->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
+                if (s == null)
+                    continue;
+
+                if ((targetHq && !isHQ) || (!targetHq && isHQ))
+                    continue;
+                
+                if (s->ItemId == itemId && s->Quantity > 0 && s->Quantity < maxStack && slot!= currentSlot)
+                {
+                    targetContainer = page;
+                    targetSlot = slot;
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }    
+
     /**
      * * Searches the player’s inventory for the next available empty slot
      * <param name="targetContainer">Outputs the container type where a free slot was found</param>
@@ -1376,7 +1431,7 @@ public partial class MainWindow
 
     private unsafe bool TryLQOneItem()
     {
-        Plugin.ChatGui.Print("[MassWithdraw] Trying to LQ.");
+        //Plugin.ChatGui.Print("[MassWithdraw] Trying to LQ.");
         GameStructs.InventoryType[] containerList = PlayerInventoryPages;
 
         var inv = GameStructs.InventoryManager.Instance();
@@ -1416,8 +1471,8 @@ public partial class MainWindow
                 bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
                 int quantity = it->Quantity;
 
-                if (originHQ)
-                    Plugin.ChatGui.Print("[MassWithdraw] That one is HQ for sure.");
+                //if (originHQ)
+                    //Plugin.ChatGui.Print("[MassWithdraw] That one is HQ for sure.");
 
                 var row = GetItemRowById(itemId);
                 if (row == null)
@@ -1435,11 +1490,12 @@ public partial class MainWindow
                     //if (HasItemInTargetInventory(itemId,noInverse))
                         //continue;						
                 //}
+
+            //Todo FindStackableSlotExcludingCurrent(...) but also specify currentslot and currentcontainer so these aren't considered
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
-
-                //bool searchInInventoryOnly = true;
-                //bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ);
+                bool searchInInventoryOnly = true;
+                bool foundstackable = FindStackableSlotExcludingCurrent(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ, slot);                
 
                 //if (!foundstackable &&
                     //!FindFreeBagSlot(out targetContainer, out targetSlot, noInverse))
@@ -1448,8 +1504,8 @@ public partial class MainWindow
                     //return false;
                 //}
 
-                if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value)) //if (foundstackable || (originHQ && checkboxLQ))
-                //if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
+                //if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value)) //if (foundstackable || (originHQ && checkboxLQ))
+                if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
                     currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
 
                 var currentSlot = container->GetInventorySlot(slot);
@@ -1468,12 +1524,12 @@ public partial class MainWindow
                     return true;
                 }   
                 
-                //if (foundstackable) //only if previously hqitem can be stacked 
-                //{
-                   //Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
-                    //_ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
-                    //return true;
-                //}
+                if (foundstackable && !originHQ) //only if previously hqitem can be stacked 
+                {
+                    Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
+                    _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
+                    return true;
+                }
                 
             }
 
