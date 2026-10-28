@@ -1376,6 +1376,7 @@ public partial class MainWindow
 
     private unsafe bool TryLQOneItem()
     {
+        Plugin.ChatGui.Print("[MassWithdraw] Trying to LQ.");
         GameStructs.InventoryType[] containerList = PlayerInventoryPages;
 
         var inv = GameStructs.InventoryManager.Instance();

@@ -212,7 +212,7 @@ public partial class MainWindow : Window, IDisposable
             ImGui.Checkbox("Transfer as LQ", ref LowerQuality);
             if (LowerQuality)
             {
-                ImGui.SameLine();
+                //ImGui.SameLine();
                 if (FindHQItemsInInventory() == 0) ImGui.BeginDisabled();
                 if (ImGui.Button("LQ in Inventory", new Vector2(ButtonWidth, 0)))
                     StartLQ(transferDelayMs);
