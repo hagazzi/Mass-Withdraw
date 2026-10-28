@@ -1128,7 +1128,7 @@ public partial class MainWindow
 
     private void OnFrameworkUpdate(IFramework _)
     {
-        if (!transferSession.Running || !LQSession.Running)
+        if (!transferSession.Running && !LQSession.Running)
             return;
 
         if (transferSession.Running && LQSession.Running)
@@ -1196,11 +1196,11 @@ public partial class MainWindow
                 return;
             }
 
-            //if (!IsRetainerUIOpen())
-            //{
-                //StopTransfer($"[MassWithdraw] Stopped: retainer closed. Moved {transferSession.Moved} item(s).");
-                //return;
-            //}
+            if (!IsRetainerUIOpen())
+            {
+                StopLQ($"[MassWithdraw] Stopped: retainer closed. Moved {LQSession.LQified} item(s).");
+                return;
+            }
 
             var now = DateTime.UtcNow;
             if (now < nextMoveAtUtc)
@@ -1457,7 +1457,7 @@ public partial class MainWindow
 
                 if(!foundstackable && !originHQ)
                     continue;
-                    
+
                 return true;
             }
 
