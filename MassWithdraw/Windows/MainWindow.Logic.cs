@@ -110,6 +110,16 @@ public partial class MainWindow
         int inventoryFreeSlots,
         int itemsToMove
     );
+
+    private sealed class LQState
+    {
+        public volatile bool Running;
+        public volatile int LQified;
+        public volatile int Total;
+    }
+    private readonly record struct LQPreview(
+        int totalHQ
+    );    
 #endregion
 
 #region Fields
@@ -119,6 +129,7 @@ public partial class MainWindow
     private readonly Dictionary<uint, int> retainerCategoryCounts = new();
 
     private readonly TransferState transferSession = new();
+    private readonly LQState LQSession = new();
     private CancellationTokenSource? cancellationTokenSource;
 
     private int transferDelayMsActive = 0;
@@ -851,6 +862,41 @@ public partial class MainWindow
 
         return false;
     }
+    
+    /**
+     * * Searches the player’s inventory for HQ Items
+     * <return type="int">return number of counted hq slots in inventory</return>
+     */    
+    private unsafe int FindHQItemsInInventory()
+    {
+        GameStructs.InventoryType[] currentPagesList = PlayerInventoryPages;
+        int counter = 0;
+
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+            return 0;
+
+        foreach (var page in currentPagesList)
+        {
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+                continue;
+
+            for (int slot = 0; slot < container->Size; slot++)
+            {
+                var s = container->GetInventorySlot(slot);
+                if (s == null)
+                    continue;
+
+                bool targetHq = s->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
+                if (targetHq)
+                    counter++;
+                
+            }
+        }
+        
+        return counter;
+    }
 #endregion
 
 #region Slot Selection
@@ -1048,62 +1094,154 @@ public partial class MainWindow
         seenUniqueDuringRun = new HashSet<uint>();
         nextMoveAtUtc = DateTime.UtcNow;
     }
+    
+    private void StartLQ(int transferDelayMs)
+    {
+        if (LQSession.Running)
+            return;
+
+        if (FindHQItemsInInventory() == 0)
+        {
+            Plugin.ChatGui.Print("[MassWithdraw] Nothing to LQ.");
+            return;
+        }
+
+        if (!LowerQuality)
+        {
+            Plugin.ChatGui.Print("[MassWithdraw] LQ not enabled.");
+            return;
+        }        
+
+        LQSession.LQified = 0;
+        LQSession.Total = FindHQItemsInInventory();
+        LQSession.Running = true;
+
+        ResetInventoryCursor();
+
+        cancellationTokenSource = new CancellationTokenSource();
+        transferDelayMsActive = transferDelayMs;
+        currentPageIndex = 0;
+        currentSlotIndex = 0;
+        seenUniqueDuringRun = new HashSet<uint>();
+        nextMoveAtUtc = DateTime.UtcNow;
+    }   
 
     private void OnFrameworkUpdate(IFramework _)
     {
-        if (!transferSession.Running)
+        if (!transferSession.Running || !LQSession.Running)
             return;
 
-        if (cancellationTokenSource == null || cancellationTokenSource.IsCancellationRequested)
-        {
-            StopTransfer($"[MassWithdraw] Cancelled. Moved so far: {transferSession.Moved} item(s).");
-            return;
-        }
+        if (transferSession.Running && LQSession.Running)
+            StopLQ($"[MassWithdraw] Stopped: can't have both a transfer session and a LQ session running");
 
-        if (!IsRetainerUIOpen())
-        {
-            StopTransfer($"[MassWithdraw] Stopped: retainer closed. Moved {transferSession.Moved} item(s).");
-            return;
-        }
-
-        var now = DateTime.UtcNow;
-        if (now < nextMoveAtUtc)
-            return;
-
-        bool didMove = TryMoveOneItemTowardTarget();
-
-        if (!transferSession.Running)
-            return;
-
-        if (didMove)
-        {
-            System.Threading.Interlocked.Increment(ref transferSession.Moved);
-
-            int delay = GenerateHumanizedDelay(transferDelayMsActive);
-
-            int roll;
-            lock (delayRandom)
-                roll = delayRandom.Next(0, 100);
-
-            if (roll < 7)
+        if (transferSession.Running)
+        {    
+            if (cancellationTokenSource == null || cancellationTokenSource.IsCancellationRequested)
             {
-                int extra;
-                lock (delayRandom)
-                    extra = delayRandom.Next(100, 250);
-
-                delay += GenerateHumanizedDelay(extra);
+                StopTransfer($"[MassWithdraw] Cancelled. Moved so far: {transferSession.Moved} item(s).");
+                return;
             }
 
-            // small breather every 10 moves (helps FPS)
-            if (transferSession.Moved % 10 == 0)
-                delay += 250;
+            if (!IsRetainerUIOpen())
+            {
+                StopTransfer($"[MassWithdraw] Stopped: retainer closed. Moved {transferSession.Moved} item(s).");
+                return;
+            }
 
-            nextMoveAtUtc = now.AddMilliseconds(Math.Max(20, delay));
+            var now = DateTime.UtcNow;
+            if (now < nextMoveAtUtc)
+                return;
+
+            bool didMove = TryMoveOneItemTowardTarget();
+
+            if (!transferSession.Running)
+                return;
+
+            if (didMove)
+            {
+                System.Threading.Interlocked.Increment(ref transferSession.Moved);
+
+                int delay = GenerateHumanizedDelay(transferDelayMsActive);
+
+                int roll;
+                lock (delayRandom)
+                    roll = delayRandom.Next(0, 100);
+
+                if (roll < 7)
+                {
+                    int extra;
+                    lock (delayRandom)
+                        extra = delayRandom.Next(100, 250);
+
+                    delay += GenerateHumanizedDelay(extra);
+                }
+
+                // small breather every 10 moves (helps FPS)
+                if (transferSession.Moved % 10 == 0)
+                    delay += 250;
+
+                nextMoveAtUtc = now.AddMilliseconds(Math.Max(20, delay));
+            }
+            else
+            {
+                nextMoveAtUtc = now;
+            }
+
         }
-        else
+        else if (LQSession.Running)
         {
-            nextMoveAtUtc = now;
-        }
+            if (cancellationTokenSource == null || cancellationTokenSource.IsCancellationRequested)
+            {
+                StopLQ($"[MassWithdraw] Cancelled. LQ so far: {LQSession.LQified} item(s).");
+                return;
+            }
+
+            //if (!IsRetainerUIOpen())
+            //{
+                //StopTransfer($"[MassWithdraw] Stopped: retainer closed. Moved {transferSession.Moved} item(s).");
+                //return;
+            //}
+
+            var now = DateTime.UtcNow;
+            if (now < nextMoveAtUtc)
+                return;
+
+            bool didLQ = TryLQOneItem();
+
+            if (!LQSession.Running)
+                return;
+
+            if (didLQ)
+            {
+                System.Threading.Interlocked.Increment(ref LQSession.LQified);
+
+                int delay = GenerateHumanizedDelay(transferDelayMsActive);
+
+                int roll;
+                lock (delayRandom)
+                    roll = delayRandom.Next(0, 100);
+
+                if (roll < 7)
+                {
+                    int extra;
+                    lock (delayRandom)
+                        extra = delayRandom.Next(100, 250);
+
+                    delay += GenerateHumanizedDelay(extra);
+                }
+
+                // small breather every 10 moves (helps FPS)
+                if (transferSession.Moved % 10 == 0)
+                    delay += 250;
+
+                nextMoveAtUtc = now.AddMilliseconds(Math.Max(20, delay));
+            }
+            else
+            {
+                nextMoveAtUtc = now;
+            }
+
+        }       
     }
 
     private void StopTransfer(string message)
@@ -1120,9 +1258,25 @@ public partial class MainWindow
         Plugin.ChatGui.Print(message);
     }
 
-    //todo if !noInverse && originHQ && chckboxLQ 
-    //lower quality one round first then move
-    //check for isCraftingMaterial 
+    private void StopLQ(string message)
+    {
+        LQSession.Running = false;
+
+        var cts = cancellationTokenSource;
+        cancellationTokenSource = null;
+        cts?.Dispose();
+
+        seenUniqueDuringRun?.Clear();
+        seenUniqueDuringRun = null;
+
+        Plugin.ChatGui.Print(message);
+    }
+    
+
+    //i don't quite see how to modify it so that hq item are lq-ified when moving from retainer to inventory, main issue being targetslot isnt cached and its not necessarily 
+    //targetslot - 1, unlike slot that goes in order
+    //only way im thinking would be to copy start transfer and onframework update code so that it would loop through the inventory and LQ its content
+    //maybe even moving hq from retainer inv to inv, LQ them then returning them to retainer inv?
     private unsafe bool TryMoveOneItemTowardTarget()
     {
         GameStructs.InventoryType[] containerList;
@@ -1219,6 +1373,101 @@ public partial class MainWindow
         StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
         return false;
     }
+
+    private unsafe bool TryLQOneItem()
+    {
+        GameStructs.InventoryType[] containerList = PlayerInventoryPages;
+
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+        {
+            StopLQ("[MassWithdraw] InventoryManager not available.");
+            return false;
+        }
+
+        seenUniqueDuringRun ??= new HashSet<uint>();
+        //Plugin.ChatGui.Print($"currentPageIndex = {currentPageIndex}");
+        //Plugin.ChatGui.Print($"containerList.Length = {containerList.Length}");
+        while (currentPageIndex < containerList.Length)
+        {
+            var page = containerList[currentPageIndex];
+            var container = inv->GetInventoryContainer(page);
+            if (container == null)
+            {
+                currentPageIndex++;
+                currentSlotIndex = 0;
+                continue;
+            }
+
+            int pageSize = container->Size;
+
+            while (currentSlotIndex < pageSize)
+            {
+                int slot = currentSlotIndex++; //need to check whether slot is empty becore incrementing (case where stackable was found)
+                var it = container->GetInventorySlot(slot);
+                if (it == null || it->ItemId == 0 || it->Quantity == 0)
+                    continue;
+
+                uint itemId = it->ItemId;
+                bool originHQ = it->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
+                int quantity = it->Quantity;
+
+                var row = GetItemRowById(itemId);
+                if (row == null)
+                    continue;                
+                //if (row == null || !MatchesTransferFilters(row.Value))
+                    //continue;
+
+                //if (row.Value.IsUnique)
+                //{
+                    //if (!seenUniqueDuringRun.Add(itemId))
+                        //continue;
+                    //if (HasItemInTargetInventory(itemId,noInverse))
+                        //continue;						
+                //}
+                GameStructs.InventoryType targetContainer;
+                int targetSlot;
+                bool searchInInventoryOnly = true;
+                bool foundstackable = FindStackableSlot(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ);
+
+                //if (!foundstackable &&
+                    //!FindFreeBagSlot(out targetContainer, out targetSlot, noInverse))
+                //{
+                    //StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");
+                    //return false;
+                //}
+
+                if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
+                    currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
+
+                var currentSlot = container->GetInventorySlot(slot);
+                if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
+                    return false;
+
+                if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))
+                {
+                    int delay = delayRandom.Next(850, 1250);
+                    nextMoveAtUtc = DateTime.UtcNow.AddMilliseconds(delay);
+                    AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);                    
+                    return true;
+                }   
+                
+                if (foundstackable)
+                    _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
+
+                if(!foundstackable && !originHQ)
+                    continue;
+                    
+                return true;
+            }
+
+            currentPageIndex++;
+            currentSlotIndex = 0;
+        }
+
+        StopTransfer($"[MassWithdraw] Done. Moved total: {transferSession.Moved} item(s).");
+        return false;
+    }    
 
 #endregion
 

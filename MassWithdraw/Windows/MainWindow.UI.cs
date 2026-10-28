@@ -209,7 +209,22 @@ public partial class MainWindow : Window, IDisposable
                 noInverse = false;
                 RecountRetainerCategoryCounts();
             }
-            ImGui.Checkbox("LQ", ref LowerQuality);
+            ImGui.Checkbox("Transfer as LQ", ref LowerQuality);
+            if (LowerQuality)
+            {
+                ImGui.SameLine();
+                if (FindHQItemsInInventory() == 0) ImGui.BeginDisabled();
+                if (ImGui.Button("LQ in Inventory", new Vector2(ButtonWidth, 0)))
+                    StartLQ(transferDelayMs);
+                if (FindHQItemsInInventory() == 0) ImGui.EndDisabled();
+                ImGui.SameLine();
+                if (!LQSession.Running) ImGui.BeginDisabled();
+                if (ImGui.Button("Stop", new Vector2(ButtonWidth, 0)))
+                    StopLQ($"[MassWithdraw] Cancelled. LQ so far: {LQSession.LQified} item(s).");
+                if (!LQSession.Running) ImGui.EndDisabled();                
+            }
+            //ImGui.SameLine();
+
         }
         ImGui.EndGroup();
 
