@@ -1522,9 +1522,10 @@ public partial class MainWindow
                     //return false;
                 //}
 
-                if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
+                //if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
+                if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value)) //if (foundstackable || (originHQ && checkboxLQ))
                 {
-                    currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
+                    currentSlotIndex--; //one recheck if it was hq to stack if possible
                 }
                     
 
@@ -1553,10 +1554,10 @@ public partial class MainWindow
                     return true; //should make a distinction if moved or lqified, LQSession.LQified increase in both cases
                 }
                 
-                //if (!foundstackable && !originHQ && triggerMoving) //second pass wasnt stackable
-                //{
-                    //triggerMoving = false;
-                //}                                
+                if (!foundstackable && !originHQ && triggerMoving) //second pass wasnt stackable
+                {
+                    triggerMoving = false;
+                }                                
             }
 
             currentPageIndex++;
