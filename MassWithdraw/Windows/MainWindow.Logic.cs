@@ -1539,16 +1539,16 @@ public partial class MainWindow
                 {
                     int delay = delayRandom.Next(850, 1250);
                     Plugin.ChatGui.Print("[MassWithdraw] Found HQ, Lowering it.");
-                    //triggerMoving = true; //only move if doing a second pass on the same slot
+                    triggerMoving = true; //only move if doing a second pass on the same slot
                     nextMoveAtUtc = DateTime.UtcNow.AddMilliseconds(delay);
                     AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);                    
                     return true;
                 }   
                 
-                if (foundstackable && !originHQ) //only if previously hqitem can be stacked  && triggerMoving
+                if (foundstackable && !originHQ && triggerMoving) //only if previously hqitem can be stacked  && triggerMoving
                 {
                     Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
-                    //triggerMoving = false;
+                    triggerMoving = false;
                     _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
                     return true; //should make a distinction if moved or lqified, LQSession.LQified increase in both cases
                 }
