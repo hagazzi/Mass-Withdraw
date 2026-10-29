@@ -135,6 +135,7 @@ public partial class MainWindow
     private int transferDelayMsActive = 0;
     private int currentPageIndex = 0;
     private int currentSlotIndex = 0;
+    private bool triggerMoving = false;
     private bool noInverse = true;
     private bool LowerQuality = false;
     private HashSet<uint>? seenUniqueDuringRun;
@@ -289,10 +290,13 @@ public partial class MainWindow
     {
         bool isCatalystUiCategory = item.ItemUICategory.RowId == 60;
         bool isGlamourPrism = item.RowId == 21800;
+        bool isClearPrism = item.RowId == 7671; //not a catalyst but is basically the same
         return 
         (
-            isCatalystUiCategory && 
-            !isGlamourPrism
+            (
+                isCatalystUiCategory ||
+                isClearPrism
+            ) && !isGlamourPrism
         );
     }
 
@@ -885,13 +889,22 @@ public partial class MainWindow
             for (int slot = 0; slot < container->Size; slot++)
             {
                 var s = container->GetInventorySlot(slot);
+                
                 if (s == null)
                     continue;
-
+                
+                uint itemId = s->ItemId;
                 bool targetHq = s->Flags.HasFlag(InventoryItem.ItemFlags.HighQuality);
                 if (targetHq)
-                    counter++;
-                
+                {
+                    var row = GetItemRowById(itemId);
+                    if (row == null)
+                    {
+                        continue;
+                    }
+                    if (IsCraftingMaterialAll(row.Value)) //only increment if is crafting material
+                        counter++;
+                }                                    
             }
         }
         
@@ -1495,7 +1508,10 @@ public partial class MainWindow
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
                 bool searchInInventoryOnly = true;
-                bool foundstackable = FindStackableSlotExcludingCurrent(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ, slot);                
+                bool foundstackable = FindStackableSlotExcludingCurrent(itemId, out targetContainer, out targetSlot, searchInInventoryOnly, originHQ, slot);  
+
+                if (!IsCraftingMaterialAll(row.Value)) //no point trying to stack / move if not a crafting material              
+                    foundstackable = false;
 
                 //if (!foundstackable &&
                     //!FindFreeBagSlot(out targetContainer, out targetSlot, noInverse))
@@ -1504,9 +1520,11 @@ public partial class MainWindow
                     //return false;
                 //}
 
-                //if (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value)) //if (foundstackable || (originHQ && checkboxLQ))
                 if (foundstackable || (originHQ && LowerQuality && IsCraftingMaterialAll(row.Value))) //if (foundstackable || (originHQ && checkboxLQ))
+                {
                     currentSlotIndex--; //systematically do a recheck on the same slot if it found a stackable item
+                }
+                    
 
                 var currentSlot = container->GetInventorySlot(slot);
                 if (currentSlot == null || currentSlot->ItemId != itemId || currentSlot->Quantity != quantity)
@@ -1519,25 +1537,31 @@ public partial class MainWindow
                 {
                     int delay = delayRandom.Next(850, 1250);
                     Plugin.ChatGui.Print("[MassWithdraw] Found HQ, Lowering it.");
+                    triggerMoving = true; //only move if doing a second pass on the same slot
                     nextMoveAtUtc = DateTime.UtcNow.AddMilliseconds(delay);
                     AgentInventoryContext.Instance()->LowerItemQuality(it, page, slot, 0);                    
                     return true;
                 }   
                 
-                if (foundstackable && !originHQ) //only if previously hqitem can be stacked 
+                if (foundstackable && !originHQ && triggerMoving) //only if previously hqitem can be stacked 
                 {
                     Plugin.ChatGui.Print("[MassWithdraw] Found Stackable, Moving.");
+                    triggerMoving = false;
                     _ = inv->MoveItemSlot(page, (ushort)slot, targetContainer, (ushort)targetSlot, true);
-                    return true;
+                    return true; //should make a distinction if moved or lqified, LQSession.LQified increase in both cases
                 }
                 
+                if (!foundstackable && !originHQ && triggerMoving) //second pass wasnt stackable
+                {
+                    triggerMoving = false;
+                }                                
             }
 
             currentPageIndex++;
             currentSlotIndex = 0;
         }
 
-        StopLQ($"[MassWithdraw] Done. Moved total: {LQSession.LQified} item(s).");
+        StopLQ($"[MassWithdraw] Done. LQified total: {LQSession.LQified} item(s).");
         return false;
     }    
 
